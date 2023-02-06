@@ -1,3 +1,5 @@
+
+
 // gets arguments from a single command
 void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect){
     while(1){
@@ -32,7 +34,6 @@ void executeSingleCommand(string command){
         return;
     }
     else if(pid==0){ // child process
-
         if (fInRedirect != 0) {
             int in = open(args[fInRedirect], O_RDONLY);
             dup2(in, 0);

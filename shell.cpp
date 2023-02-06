@@ -4,6 +4,7 @@
 #include <vector>
 #include <wait.h>
 #include <fcntl.h>
+#include <signal.h>
 
 
 using namespace std;
@@ -14,13 +15,18 @@ using namespace std;
 
 
 void printPrompt(); // Function to print the prompt
+// Function to handle the SIGINT signal (Ctrl+C) and print the prompt after that
+void sig_handler_prompt(int signum){ printf("\n"); printPrompt(); }
+// Function to handle the SIGINT signal (Ctrl+C) and not print the prompt after that
+void sig_handler_no_prompt(int signum){ printf("\n"); }
 
 int main(){
-
     while(true){
         printPrompt();
+        signal(SIGINT, sig_handler_prompt);
         string command;
         getline(cin, command);
+        signal(SIGINT, sig_handler_no_prompt);
         executeSingleCommand(command);
     }
     
@@ -32,4 +38,5 @@ int main(){
 void printPrompt(){
     getcwd(curr_working_dir, sizeof(curr_working_dir));
     cout << "our-shell:" << curr_working_dir << "$ ";
+    fflush(stdout);
 }
