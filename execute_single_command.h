@@ -6,19 +6,35 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
         char *arg = strsep(&stringp, " \t");
         if(arg == NULL) break;
         if(strlen(arg)==0) continue;
-        else if (strcmp(arg, "<") == 0) fInRedirect = args.size();
-        else if (strcmp(arg, ">") == 0) fOutRedirect = args.size();
-        else    args.push_back(arg);
+        else    {
+            int i=0, j=0;
+            // check for i/o redirection(s) in extracted tokens
+            while(arg[j]!='\0') {
+                if(arg[j]=='<') {
+                    if(i!=j) {
+                        arg[j] = '\0';
+                        args.push_back(arg + i);
+                    }
+                    fInRedirect = args.size();
+                    i=j+1;
+                }
+                else if(arg[j]=='>') {
+                    if(i!=j) {
+                        arg[j] = '\0';
+                        args.push_back(arg + i);
+                    }
+                    fOutRedirect = args.size();
+                    i=j+1;
+                }
+                j++;
+            }
+            if(i!=j) args.push_back(arg + i);
+        }
     }
-    // cout<<fInRedirect<<' '<<fOutRedirect<<'\n';
-    // for(auto&a:args) cout<<a<<",";
 }
 
 // Function to execute a single commands
 void executeSingleCommand(string command){
-    if(command == "exit"){
-        exit(0);
-    }
 
     vector<char *> args;
     int fInRedirect=0, fOutRedirect=0;
@@ -26,27 +42,46 @@ void executeSingleCommand(string command){
 
     if(args.size()==0) return;
 
-	// Forking 
+    // handle exit from shell
+    if(strcmp(args[0], "exit") == 0) {
+        exit(0);
+    }
+
+	// fork child to execute 
 	pid_t pid = fork();
 
     if(pid==-1){
-        cerr << "Failed To Fork!\n";
+        cerr << "Failed To Fork!" << endl;
         return;
     }
     else if(pid==0){ // child process
         if (fInRedirect != 0) {
+            // open input file
             int in = open(args[fInRedirect], O_RDONLY);
-            dup2(in, 0);
+            if (in == -1) {
+                cerr << "Error opening file: " << args[fInRedirect] << endl;
+                exit(1);
+            }
+            // copy file_desc to STDIN
+            dup2(in, STDIN_FILENO);
             close(in);
         }
         if (fOutRedirect != 0) {
+            // open output file
             int out = open(args[fOutRedirect], O_WRONLY | O_TRUNC | O_CREAT, 0644);
-            dup2(out, 1);
+            if (out == -1) {
+                cerr << "Error opening file: " << args[fInRedirect] << endl;
+                exit(1);
+            }
+            // copy file_desc to STDOUT
+            dup2(out, STDOUT_FILENO);
             close(out);
         }
+
         char **args_ptr = &args[0];
+        // Execute arguments
 		if (execvp(args[0], args_ptr) < 0) {
-			cerr << "Error in executing command\n";
+			cerr << "Error in executing command" << endl;
 		}
 		exit(0);
     }
@@ -54,6 +89,4 @@ void executeSingleCommand(string command){
         wait(NULL); // wait for the child to finish
         return;
     }
-    
-
 }
