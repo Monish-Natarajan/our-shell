@@ -33,6 +33,19 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
     }
 }
 
+// Function to change directory
+void executeCD(vector<char *> &args) {
+    if (args.size() < 2) {
+        cerr << "Error: missing argument. Usage: cd <directory>" << endl;
+        return;
+    }
+
+    if (chdir(args[1]) != 0) {
+        cerr << "Error: unable to change directory to \"" << args[1] << "\"" << endl;
+        return;
+    }
+}
+
 // Function to execute a single commands
 void executeSingleCommand(string command){
 
@@ -45,6 +58,11 @@ void executeSingleCommand(string command){
     // handle exit from shell
     if(strcmp(args[0], "exit") == 0) {
         exit(0);
+    }
+    // handle exit from shell
+    else if(strcmp(args[0], "cd") == 0) {
+        executeCD(args);
+        return;
     }
 
 	// fork child to execute 
