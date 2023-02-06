@@ -1,12 +1,3 @@
-// Create substring of str from start index to end-1
-char *substring(const char *str, size_t start, size_t end) {
-    size_t len = end - start;
-    char *result = (char *)malloc(len + 1);
-    memcpy(result, str + start, len);
-    result[len] = '\0';
-    return result;
-}
-
 // gets arguments from a single command
 void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect){
     while(1){
@@ -18,18 +9,24 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
             // check for i/o redirection(s) in extracted tokens
             while(arg[j]!='\0') {
                 if(arg[j]=='<') {
-                    if(i!=j) args.push_back(substring(arg, i, j));
+                    if(i!=j) {
+                        arg[j] = '\0';
+                        args.push_back(arg + i);
+                    }
                     fInRedirect = args.size();
                     i=j+1;
                 }
                 else if(arg[j]=='>') {
-                    if(i!=j) args.push_back(substring(arg, i, j));
+                    if(i!=j) {
+                        arg[j] = '\0';
+                        args.push_back(arg + i);
+                    }
                     fOutRedirect = args.size();
                     i=j+1;
                 }
                 j++;
             }
-            if(i!=j) args.push_back(substring(arg, i, j));
+            if(i!=j) args.push_back(arg + i);
         }
     }
 }
