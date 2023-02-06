@@ -1,15 +1,37 @@
+// Create substring of str from start index to end-1
+char *substring(const char *str, size_t start, size_t end) {
+    size_t len = end - start;
+    char *result = (char *)malloc(len + 1);
+    memcpy(result, str + start, len);
+    result[len] = '\0';
+    return result;
+}
+
 // gets arguments from a single command
 void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect){
     while(1){
         char *arg = strsep(&stringp, " \t");
         if(arg == NULL) break;
         if(strlen(arg)==0) continue;
-        else if (strcmp(arg, "<") == 0) fInRedirect = args.size();
-        else if (strcmp(arg, ">") == 0) fOutRedirect = args.size();
-        else    args.push_back(arg);
+        else    {
+            int i=0, j=0;
+            // check for i/o redirection(s) in extracted tokens
+            while(arg[j]!='\0') {
+                if(arg[j]=='<') {
+                    if(i!=j) args.push_back(substring(arg, i, j));
+                    fInRedirect = args.size();
+                    i=j+1;
+                }
+                else if(arg[j]=='>') {
+                    if(i!=j) args.push_back(substring(arg, i, j));
+                    fOutRedirect = args.size();
+                    i=j+1;
+                }
+                j++;
+            }
+            if(i!=j) args.push_back(substring(arg, i, j));
+        }
     }
-    // cout<<fInRedirect<<' '<<fOutRedirect<<'\n';
-    // for(auto&a:args) cout<<a<<",";
 }
 
 // Function to execute a single commands
