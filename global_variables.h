@@ -1,0 +1,1 @@
+char curr_working_dir[1024]; // Current working directory
