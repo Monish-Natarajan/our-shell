@@ -8,3 +8,6 @@ gpt
 cust.txt
 out.txt
 ns.cpp
+wildcards.cpp
+wildcards
+execute_single_command(OLD).h
