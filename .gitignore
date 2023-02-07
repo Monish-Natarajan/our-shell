@@ -1,13 +1,5 @@
-a.out
-shell
-tempCodeRunnerFile.cpp
-exec.h
 .gitignore
-gpt.c
-gpt
-cust.txt
-out.txt
-ns.cpp
-wildcards.cpp
+shell
 wildcards
+wildcards.cpp
 execute_single_command(OLD).h
