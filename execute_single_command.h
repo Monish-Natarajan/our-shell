@@ -140,6 +140,21 @@ void execute(string command)
             {
                 // 2nd process
                 wait(NULL);
+                vector<char *> args;
+                int fInRedirect = 0, fOutRedirect = 0;
+                string c1 = command.substr(len + 1);
+                getArgs((char *)c1.c_str(), args, fInRedirect, fOutRedirect);
+
+                // handle exit from shell
+                if (strcmp(args[0], "exit") == 0)
+                    exit(0);
+                // handle cd from shell
+                else if (strcmp(args[0], "cd") == 0)
+                {
+                    executeCD(args);
+                    return;
+                }
+
                 pid = fork();
                 if (pid == -1)
                 {
@@ -167,6 +182,8 @@ void execute(string command)
             }
         }
     }
+
+    // IF NO PIPE 
 
     vector<char *> args;
     int fInRedirect = 0, fOutRedirect = 0;
