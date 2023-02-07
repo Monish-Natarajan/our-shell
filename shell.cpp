@@ -6,22 +6,28 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#define RESET "\x1B[0m"
+#define BOLD "\x1B[1m" // Bold Text Formula...
+#define RED "\033[1;32m"
 
 using namespace std;
-
 #include "global_variables.h"
 #include "execute_single_command.h"
 
-
-
 void printPrompt(); // Function to print the prompt
 // Function to handle the SIGINT signal (Ctrl+C) and print the prompt after that
-void sig_handler_prompt(int signum){ printf("\n"); printPrompt(); }
+void sig_handler_prompt(int signum)
+{
+    printf("\n");
+    printPrompt();
+}
 // Function to handle the SIGINT signal (Ctrl+C) and not print the prompt after that
-void sig_handler_no_prompt(int signum){ printf("\n"); }
+void sig_handler_no_prompt(int signum) { printf("\n"); }
 
-int main(){
-    while(true){
+int main()
+{
+    while (true)
+    {
         printPrompt();
         signal(SIGINT, sig_handler_prompt);
         string command;
@@ -29,14 +35,17 @@ int main(){
         signal(SIGINT, sig_handler_no_prompt);
         execute(command);
     }
-    
-    return 0;
 
+    return 0;
 }
 
 // Function to print the prompt
-void printPrompt(){
+void printPrompt()
+{
     getcwd(curr_working_dir, sizeof(curr_working_dir));
+    printf("%s", RED);
+    printf("%s", BOLD);
     cout << "our-shell:" << curr_working_dir << "$ ";
+    printf("%s", RESET);
     fflush(stdout);
 }

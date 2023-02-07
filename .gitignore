@@ -2,6 +2,7 @@ a.out
 shell
 tempCodeRunnerFile.cpp
 exec.h
+.gitignore
 gpt.c
 gpt
 cust.txt
