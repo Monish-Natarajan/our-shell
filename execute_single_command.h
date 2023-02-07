@@ -1,3 +1,4 @@
+
 // gets arguments from a single command
 void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect)
 {
@@ -210,7 +211,8 @@ void execute(string command)
                     int status = execute_our_command(command.substr(len + 1));
                 }
                 else {
-                    printf("Child started with pid (%d)\n", pid);
+                    background_processes.push_back(make_pair(pid, command));
+                    printf("[%ld] %d\n",background_processes.size(), pid);
                     fflush(stdout);
                 }
 
@@ -244,8 +246,10 @@ void execute(string command)
             int status = execute_our_command(command.substr(len + 1));
         }
         else{
-            printf("Child started with pid (%d)\n", pid);
+            background_processes.push_back(make_pair(pid, command));
+            printf("[%ld] %d\n",background_processes.size(), pid);
             fflush(stdout);
+            
             }
         return;
     }
@@ -270,8 +274,10 @@ void parseCommand(string &command)
             cerr << "Syntax error: tokens found after '&'" << endl;
             return;
         }
-        else
+        else{
+            command.pop_back();
             BACKGROUND_FLAG = 1;
+        }
     }
     execute(command);
 }
