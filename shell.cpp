@@ -37,7 +37,7 @@ int main(){
         getline(cin, command);
         //printf("Input taken: %s\n", command.c_str()); fflush(stdout);
         signal(SIGINT, sig_handler_no_prompt);
-        execute(command);
+        parseCommand(command);
         fflush(stdout);
     }
     

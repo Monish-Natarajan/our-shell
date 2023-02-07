@@ -1,40 +1,51 @@
 // gets arguments from a single command
-void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect){
-    while(1){
+void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect)
+{
+    while (1)
+    {
         char *arg = strsep(&stringp, " \t");
-        if(arg == NULL) break;
-        if(strlen(arg)==0) continue;
-        else if(strcmp(arg, "&") == 0) {
-            BACKGROUND_FLAG=1;
+        if (arg == NULL)
+            break;
+        if (strlen(arg) == 0)
+            continue;
+        else if (strcmp(arg, "&") == 0)
+        {
+            BACKGROUND_FLAG = 1;
         }
-        else  {
-            int i=0, j=0;
+        else
+        {
+            int i = 0, j = 0;
             // check for i/o redirection(s) in extracted tokens
-            while(arg[j]!='\0') {
-                if(arg[j]=='<') {
-                    if(i!=j) {
+            while (arg[j] != '\0')
+            {
+                if (arg[j] == '<')
+                {
+                    if (i != j)
+                    {
                         arg[j] = '\0';
                         args.push_back(arg + i);
                     }
                     fInRedirect = args.size();
-                    i=j+1;
+                    i = j + 1;
                 }
-                else if(arg[j]=='>') {
-                    if(i!=j) {
+                else if (arg[j] == '>')
+                {
+                    if (i != j)
+                    {
                         arg[j] = '\0';
                         args.push_back(arg + i);
                     }
                     fOutRedirect = args.size();
-                    i=j+1;
+                    i = j + 1;
                 }
                 j++;
             }
-            if(i!=j){
+            if (i != j)
+            {
                 char *word = arg + i;
                 vector<char *> substitutes = substitute(word);
-                for(char *substitute : substitutes)
+                for (char *substitute : substitutes)
                     args.push_back(substitute);
-                
             }
         }
     }
@@ -48,7 +59,8 @@ void executeCD(vector<char *> &args)
         cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
         return;
     }
-    else if (args.size() > 2) {
+    else if (args.size() > 2)
+    {
         cerr << "Error: cd: too many arguments. Usage: cd <directory>" << endl;
         return;
     }
@@ -69,9 +81,8 @@ void executeSingleCommand(string command)
 
     if (args.size() == 0)
         return;
-    else if(strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0)  // Called from child(in case of pipe), so not useful 
+    else if (strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0) // Called from child(in case of pipe), so not useful
         exit(EXIT_SUCCESS);
-
 
     if (fInRedirect != 0)
     {
@@ -109,8 +120,8 @@ void executeSingleCommand(string command)
     }
 }
 
-
-int execute_our_command(string command){
+int execute_our_command(string command)
+{
     vector<char *> args;
     int fInRedirect = 0, fOutRedirect = 0;
     getArgs((char *)command.c_str(), args, fInRedirect, fOutRedirect);
@@ -125,7 +136,6 @@ int execute_our_command(string command){
         return 1;
     }
     return 0;
-
 }
 
 void execute(string command)
@@ -136,7 +146,27 @@ void execute(string command)
         if (command[len] == '|')
         {
 
-                pid_t pid = fork();
+            pid_t pid = fork();
+            if (pid == -1)
+            {
+                perror("fork");
+                exit(EXIT_FAILURE);
+            }
+
+            if (pid == 0)
+            {
+                BACKGROUND_FLAG = 0;
+
+                int pipe_fds[2];
+                pid_t pid;
+
+                if (pipe(pipe_fds) == -1)
+                {
+                    perror("pipe");
+                    exit(EXIT_FAILURE);
+                }
+
+                pid = fork();
                 if (pid == -1)
                 {
                     perror("fork");
@@ -145,69 +175,53 @@ void execute(string command)
 
                 if (pid == 0)
                 {
+                    BACKGROUND_FLAG = 0;
 
-                    int pipe_fds[2];
-                    pid_t pid;
-
-                    if (pipe(pipe_fds) == -1)
-                    {
-                        perror("pipe");
-                        exit(EXIT_FAILURE);
-                    }
-
-                    pid = fork();
-                    if (pid == -1)
-                    {
-                        perror("fork");
-                        exit(EXIT_FAILURE);
-                    }
-
-                    if (pid == 0)
-                    {
-                        // 1st process
-                        close(pipe_fds[0]);
-                        dup2(pipe_fds[1], STDOUT_FILENO);
-                        close(pipe_fds[1]);
-                        execute(command.substr(0, len));
-                        exit(EXIT_SUCCESS);
-                    }
-
-                    else
-                    {
-
-                        // 2nd process
-                        waitpid(pid, NULL, 0);
-
-                        // 2nd process
-                        close(pipe_fds[1]);
-                        dup2(pipe_fds[0], STDIN_FILENO);
-                        close(pipe_fds[0]);
-
-                        executeSingleCommand(command.substr(len + 1));
-                        exit(EXIT_SUCCESS);
-                    }
+                    // 1st process
+                    close(pipe_fds[0]);
+                    dup2(pipe_fds[1], STDOUT_FILENO);
+                    close(pipe_fds[1]);
+                    execute(command.substr(0, len));
+                    exit(EXIT_SUCCESS);
                 }
+
                 else
                 {
 
-                    // parent process
-                    // close(pipe_fds[1]);
-                    // close(pipe_fds[0]);
-                    waitpid(pid, NULL, 0);
+                    // 2nd process
 
-                    int status = execute_our_command(command.substr(len+1));
-                    // if (status == 1)
-                    //     return;
-                    return;
+                    close(pipe_fds[1]);
+                    dup2(pipe_fds[0], STDIN_FILENO);
+                    close(pipe_fds[0]);
+
+                    executeSingleCommand(command.substr(len + 1));
+                    exit(EXIT_SUCCESS);
                 }
+            }
+            else
+            {
+
+                // parent process
+                // close(pipe_fds[1]);
+                // close(pipe_fds[0]);
+                if (!BACKGROUND_FLAG)
+                {
+                    waitpid(pid, NULL, 0);
+                    int status = execute_our_command(command.substr(len + 1));
+                }
+                else {
+                    printf("Child started with pid (%d)\n", pid);
+                    fflush(stdout);
+                }
+
+                // if (status == 1)
+                //     return;
+                return;
+            }
         }
     }
 
-    // IF NO PIPE 
-
-    int status = execute_our_command(command.substr(len+1));
-    if (status == 1)
-        return;
+    // IF NO PIPE
 
     // fork child to execute
     pid_t pid = fork();
@@ -218,12 +232,46 @@ void execute(string command)
     }
     else if (pid == 0)
     {
+        BACKGROUND_FLAG = 0;
         executeSingleCommand(command);
         exit(EXIT_SUCCESS);
     }
     else
     {
-        waitpid(pid, NULL, 0);
+        if (!BACKGROUND_FLAG)
+        {
+            waitpid(pid, NULL, 0);
+            int status = execute_our_command(command.substr(len + 1));
+        }
+        else{
+            printf("Child started with pid (%d)\n", pid);
+            fflush(stdout);
+            }
         return;
     }
+}
+
+void parseCommand(string &command)
+{
+    BACKGROUND_FLAG = 0;
+
+    while (!command.empty() && (command.back() == ' ' || command.back() == '\t' || command.back() == '\n'))
+        command.pop_back();
+
+    if(command.empty())
+        return;
+
+    // find first occurance of '&' in command
+    size_t found = command.find('&');
+    if (found != string::npos)
+    {
+        if (found != command.size() - 1)
+        {
+            cerr << "Syntax error: tokens found after '&'" << endl;
+            return;
+        }
+        else
+            BACKGROUND_FLAG = 1;
+    }
+    execute(command);
 }
