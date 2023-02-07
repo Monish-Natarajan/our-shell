@@ -27,7 +27,7 @@ int main(){
         string command;
         getline(cin, command);
         signal(SIGINT, sig_handler_no_prompt);
-        executeSingleCommand(command);
+        execute(command);
     }
     
     return 0;
