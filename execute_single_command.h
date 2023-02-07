@@ -1,43 +1,41 @@
 // gets arguments from a single command
-void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect)
-{
-    while (1)
-    {
+void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect){
+    while(1){
         char *arg = strsep(&stringp, " \t");
-        if (arg == NULL)
-            break;
-        if (strlen(arg) == 0)
-            continue;
-        else
-        {
-            int i = 0, j = 0;
+        if(arg == NULL) break;
+        if(strlen(arg)==0) continue;
+        else if(strcmp(arg, "&") == 0) {
+            BACKGROUND_FLAG=1;
+        }
+        else  {
+            int i=0, j=0;
             // check for i/o redirection(s) in extracted tokens
-            while (arg[j] != '\0')
-            {
-                if (arg[j] == '<')
-                {
-                    if (i != j)
-                    {
+            while(arg[j]!='\0') {
+                if(arg[j]=='<') {
+                    if(i!=j) {
                         arg[j] = '\0';
                         args.push_back(arg + i);
                     }
                     fInRedirect = args.size();
-                    i = j + 1;
+                    i=j+1;
                 }
-                else if (arg[j] == '>')
-                {
-                    if (i != j)
-                    {
+                else if(arg[j]=='>') {
+                    if(i!=j) {
                         arg[j] = '\0';
                         args.push_back(arg + i);
                     }
                     fOutRedirect = args.size();
-                    i = j + 1;
+                    i=j+1;
                 }
                 j++;
             }
-            if (i != j)
-                args.push_back(arg + i);
+            if(i!=j){
+                char *word = arg + i;
+                vector<char *> substitutes = substitute(word);
+                for(char *substitute : substitutes)
+                    args.push_back(substitute);
+                
+            }
         }
     }
 }
@@ -68,12 +66,6 @@ void executeSingleCommand(string command)
     if (args.size() == 0)
         return;
 
-    // handle cd from shell
-    else if (strcmp(args[0], "cd") == 0)
-    {
-        executeCD(args);
-        return;
-    }
 
     if (fInRedirect != 0)
     {
@@ -102,6 +94,7 @@ void executeSingleCommand(string command)
         close(out);
     }
 
+    args.push_back(NULL);
     char **args_ptr = &args[0];
     // Execute arguments
     if (execvp(args[0], args_ptr) < 0)
@@ -183,6 +176,12 @@ void execute(string command)
     // handle exit from shell
     if (strcmp(args[0], "exit") == 0)
         exit(0);
+    // handle cd from shell
+    else if (strcmp(args[0], "cd") == 0)
+    {
+        executeCD(args);
+        return;
+    }
 
     // fork child to execute
     pid_t pid = fork();
