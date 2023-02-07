@@ -1,5 +1,0 @@
-ati
-cdsd
-bsds
-edfs
-der
