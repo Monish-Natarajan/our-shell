@@ -69,6 +69,8 @@ void executeSingleCommand(string command)
 
     if (args.size() == 0)
         return;
+    else if(strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0)  // Called from child(in case of pipe), so not useful 
+        exit(EXIT_SUCCESS);
 
 
     if (fInRedirect != 0)
@@ -107,6 +109,7 @@ void executeSingleCommand(string command)
     }
 }
 
+
 int execute_our_command(string command){
     vector<char *> args;
     int fInRedirect = 0, fOutRedirect = 0;
@@ -132,45 +135,8 @@ void execute(string command)
     {
         if (command[len] == '|')
         {
-            int pipe_fds[2];
-            pid_t pid;
 
-            if (pipe(pipe_fds) == -1)
-            {
-                perror("pipe");
-                exit(EXIT_FAILURE);
-            }
-
-            pid = fork();
-            if (pid == -1)
-            {
-                perror("fork");
-                exit(EXIT_FAILURE);
-            }
-
-            if (pid == 0)
-            {
-                // 1st process
-                close(pipe_fds[0]);
-                dup2(pipe_fds[1], STDOUT_FILENO);
-                close(pipe_fds[1]);
-                execute(command.substr(0, len));
-                exit(EXIT_SUCCESS);
-            }
-
-            else
-            {
-                // 2nd process
-                wait(NULL);
-
-
-                int status = execute_our_command(command.substr(len + 1));
-                if (status == 1)
-                    return;
-
-
-
-                pid = fork();
+                pid_t pid = fork();
                 if (pid == -1)
                 {
                     perror("fork");
@@ -179,22 +145,61 @@ void execute(string command)
 
                 if (pid == 0)
                 {
-                    // 2nd process
-                    close(pipe_fds[1]);
-                    dup2(pipe_fds[0], STDIN_FILENO);
-                    close(pipe_fds[0]);
 
-                    executeSingleCommand(command.substr(len + 1));
-                    exit(EXIT_SUCCESS);
+                    int pipe_fds[2];
+                    pid_t pid;
+
+                    if (pipe(pipe_fds) == -1)
+                    {
+                        perror("pipe");
+                        exit(EXIT_FAILURE);
+                    }
+
+                    pid = fork();
+                    if (pid == -1)
+                    {
+                        perror("fork");
+                        exit(EXIT_FAILURE);
+                    }
+
+                    if (pid == 0)
+                    {
+                        // 1st process
+                        close(pipe_fds[0]);
+                        dup2(pipe_fds[1], STDOUT_FILENO);
+                        close(pipe_fds[1]);
+                        execute(command.substr(0, len));
+                        exit(EXIT_SUCCESS);
+                    }
+
+                    else
+                    {
+
+                        // 2nd process
+                        waitpid(pid, NULL, 0);
+
+                        // 2nd process
+                        close(pipe_fds[1]);
+                        dup2(pipe_fds[0], STDIN_FILENO);
+                        close(pipe_fds[0]);
+
+                        executeSingleCommand(command.substr(len + 1));
+                        exit(EXIT_SUCCESS);
+                    }
                 }
                 else
                 {
-                    close(pipe_fds[1]);
-                    close(pipe_fds[0]);
-                    wait(NULL);
+
+                    // parent process
+                    // close(pipe_fds[1]);
+                    // close(pipe_fds[0]);
+                    waitpid(pid, NULL, 0);
+
+                    int status = execute_our_command(command.substr(len+1));
+                    // if (status == 1)
+                    //     return;
                     return;
                 }
-            }
         }
     }
 
@@ -218,7 +223,7 @@ void execute(string command)
     }
     else
     {
-        wait(NULL);
+        waitpid(pid, NULL, 0);
         return;
     }
 }
