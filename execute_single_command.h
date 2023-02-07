@@ -45,7 +45,11 @@ void executeCD(vector<char *> &args)
 {
     if (args.size() < 2)
     {
-        cerr << "Error: missing argument. Usage: cd <directory>" << endl;
+        cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
+        return;
+    }
+    else if (args.size() > 2) {
+        cerr << "Error: cd: too many arguments. Usage: cd <directory>" << endl;
         return;
     }
 
@@ -103,6 +107,24 @@ void executeSingleCommand(string command)
     }
 }
 
+int execute_our_command(string command){
+    vector<char *> args;
+    int fInRedirect = 0, fOutRedirect = 0;
+    getArgs((char *)command.c_str(), args, fInRedirect, fOutRedirect);
+
+    // handle exit from shell
+    if (strcmp(args[0], "exit") == 0)
+        exit(0);
+    // handle cd from shell
+    else if (strcmp(args[0], "cd") == 0)
+    {
+        executeCD(args);
+        return 1;
+    }
+    return 0;
+
+}
+
 void execute(string command)
 {
     int len = command.size();
@@ -140,20 +162,13 @@ void execute(string command)
             {
                 // 2nd process
                 wait(NULL);
-                vector<char *> args;
-                int fInRedirect = 0, fOutRedirect = 0;
-                string c1 = command.substr(len + 1);
-                getArgs((char *)c1.c_str(), args, fInRedirect, fOutRedirect);
 
-                // handle exit from shell
-                if (strcmp(args[0], "exit") == 0)
-                    exit(0);
-                // handle cd from shell
-                else if (strcmp(args[0], "cd") == 0)
-                {
-                    executeCD(args);
+
+                int status = execute_our_command(command.substr(len + 1));
+                if (status == 1)
                     return;
-                }
+
+
 
                 pid = fork();
                 if (pid == -1)
@@ -185,20 +200,9 @@ void execute(string command)
 
     // IF NO PIPE 
 
-    vector<char *> args;
-    int fInRedirect = 0, fOutRedirect = 0;
-    string c1 = command;
-    getArgs((char *)c1.c_str(), args, fInRedirect, fOutRedirect);
-
-    // handle exit from shell
-    if (strcmp(args[0], "exit") == 0)
-        exit(0);
-    // handle cd from shell
-    else if (strcmp(args[0], "cd") == 0)
-    {
-        executeCD(args);
+    int status = execute_our_command(command.substr(len+1));
+    if (status == 1)
         return;
-    }
 
     // fork child to execute
     pid_t pid = fork();
