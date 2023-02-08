@@ -33,7 +33,7 @@ void sig_handler_prompt(int signum)
 // Function to handle the SIGINT signal (Ctrl+C) and not print the prompt after that
 void sig_handler_no_prompt(int signum)
 {
-    printf("^C\n");
+    printf("\n");
     command = "";
 }
 
@@ -41,7 +41,9 @@ void sig_handler_no_prompt(int signum)
 
 int main()
 {
-    FILE *fptr = fopen(".history.txt", "r+");
+    fptr = fopen(".history.txt", "a"); // used a option to create a file if doesn't exist
+    fclose(fptr);
+    fptr = fopen(".history.txt", "r+"); // used r+ option to open file for r/w
     if (!fptr)
     {
         printf("history couldn't be accesed\n");
@@ -61,19 +63,11 @@ int main()
         printPrompt();
         signal(SIGINT, sig_handler_prompt);
         command = getcmd();
-        if (command == "exit")
-        {
-            while (!hist.empty())
-            {
-                fprintf(fptr, "%s\n", hist.front().c_str());
-                hist.pop_front();
-            }
-            fclose(fptr);
-        }
         signal(SIGINT, sig_handler_no_prompt);
         parseCommand(command);
         fflush(stdout);
     }
+    fclose(fptr);
     return 0;
 }
 

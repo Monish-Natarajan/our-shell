@@ -16,3 +16,23 @@ ls
 echo hi &
 bash
 exit
+cat
+hi
+cat
+bash
+ls
+bash
+python3 test.py
+g++ shell.cpp -o shell
+./shell
+
+cat
+python3 test.py
+exit
+bash
+./sh	
+./shell
+exit
+jds
+./shell
+exit

@@ -46,7 +46,7 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
                 char *word = arg + i;
                 vector<char *> substitutes = substitute(word);
                 for (char *substitute : substitutes)
-                    args.push_back(substitute); 
+                    args.push_back(substitute);
             }
         }
     }
@@ -129,7 +129,16 @@ int execute_our_command(string command)
 
     // handle exit from shell
     if (strcmp(args[0], "exit") == 0)
+    {
+        while (!hist.empty())
+        {
+            fprintf(fptr, "%s\n", hist.front().c_str());
+            hist.pop_front();
+        }
+        fclose(fptr);
+        printf("exit\n");
         exit(0);
+    }
     // handle cd from shell
     else if (strcmp(args[0], "cd") == 0)
     {
