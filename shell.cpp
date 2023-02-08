@@ -43,6 +43,18 @@ string getcmd()
             ch = getchar();
             switch (ch)
             {
+            case 'A':
+                if (cm < size)
+                {
+                    hist.at(size - cm) = command;
+                    cm++;
+                    int s = command.size();
+                    while (s--)
+                        cout << "\b \b";
+                    command = hist.at(size - cm);
+                    cout << command;
+                }
+                break;
             case 'B':
                 if (cm)
                 {
@@ -55,17 +67,7 @@ string getcmd()
                     cout << command;
                 }
                 break;
-            case 'A':
-                if (cm < size)
-                {
-                    hist.at(size - cm) = command;
-                    cm++;
-                    int s = command.size();
-                    while (s--)
-                        cout << "\b \b";
-                    command = hist.at(size - cm);
-                    cout << command;
-                }
+                // case 'H':
             }
         }
         else if (ch == 127 && command.size())
@@ -82,7 +84,7 @@ string getcmd()
         {
             printf("\n");
             hist.at(size) = command;
-            if (command.size() == 0)
+            if (command.size() == 0 || (size && hist.at(size - 1) == hist.at(size)))
                 hist.pop_back();
             break;
         }
@@ -140,11 +142,11 @@ int main()
         signal(SIGINT, sig_handler_no_prompt);
         execute(command);
     }
-    while (!hist.empty())
-    {
-        fprintf(fptr, "%s\n", hist.front().c_str());
-        hist.pop_front();
-    }
+    // while (!hist.empty())
+    // {
+    //     fprintf(fptr, "%s\n", hist.front().c_str());
+    //     hist.pop_front();
+    // }
     fclose(fptr);
     return 0;
 }
