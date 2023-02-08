@@ -21,6 +21,16 @@ void sig_handler_prompt(int signum){ printf("\n"); printPrompt(); }
 // Function to handle the SIGINT signal (Ctrl+C) and not print the prompt after that
 void sig_handler_no_prompt(int signum){ printf("\n"); }
 
+void sig_handler_ctrl_Z(int signum){
+    if(current_waiting_process != -1){
+        BACKGROUND_FLAG = 1;
+        background_processes.push_back(make_pair(current_waiting_process, "DUMMY"));
+        printf("[%ld] %d\n",background_processes.size(), current_waiting_process);
+        fflush(stdout);
+        current_waiting_process = -1;
+    }
+}
+
 
 #include "execute_single_command.h"
 
@@ -29,6 +39,7 @@ void sig_handler_no_prompt(int signum){ printf("\n"); }
 
 
 int main(){
+    signal(SIGTSTP, sig_handler_ctrl_Z);
     while(true){
         vector ar = background_processes;
         printPrompt();
@@ -50,6 +61,9 @@ void printPrompt(){
     check_background_processes();
     usleep(1000); // 1ms sleep
     getcwd(curr_working_dir, sizeof(curr_working_dir));
+    for (auto&i:background_processes) {
+        cout << i.first << " " << i.second << endl;
+    }
     cout << "our-shell:" << curr_working_dir << "$ ";
     fflush(stdout);
 }
