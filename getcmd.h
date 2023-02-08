@@ -30,11 +30,12 @@ string getcmd()
 {
     cm = 0;
     sz = hist.size();
-    rl_command_func_t *up_arrow_function;
+    hist.push_back("");
+    rl_command_func_t up_arrow_function, down_arrow_function;
     rl_bind_keyseq("\033[A", up_arrow_function);
     rl_bind_keyseq("\033[B", down_arrow_function);
-    hist.push_back("");
-    char *input = readline(printPrompt());
+    input = readline(printPrompt());
+
     command = input;
     hist.at(sz) = command;
     if (sz && hist.at(sz - 1) == command)
