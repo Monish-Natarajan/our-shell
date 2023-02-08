@@ -74,3 +74,5 @@ clear
 echo hi
 echo hi | sleep 20 | echo hi | sleep 5
 exit
+ls
+exit
