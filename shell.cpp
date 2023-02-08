@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <signal.h>
+#include <readline/readline.h>
 
 #define RESET "\x1B[0m"
 #define BOLD "\x1B[1m"
@@ -41,9 +42,9 @@ void sig_handler_no_prompt(int signum)
 
 int main()
 {
-    fptr = fopen(".history.txt", "a"); // used a option to create a file if doesn't exist
+    fptr = fopen(".history", "a"); // used a option to create a file if doesn't exist
     fclose(fptr);
-    fptr = fopen(".history.txt", "r+"); // used r+ option to open file for r/w
+    fptr = fopen(".history", "r+"); // used r+ option to open file for r/w
     if (!fptr)
     {
         printf("history couldn't be accesed\n");
