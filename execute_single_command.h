@@ -182,7 +182,9 @@ void execute(string command)
 
     // handle exit from shell
     if (strcmp(args[0], "exit") == 0)
+    {
         exit(0);
+    }
 
     // fork child to execute
     pid_t pid = fork();
