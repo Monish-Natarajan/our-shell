@@ -45,11 +45,19 @@ void sig_handler_no_prompt(int signum)
 void sig_handler_ctrl_Z(int signum){
     if(current_waiting_process != -1){
         BACKGROUND_FLAG = 1;
-        background_processes.push_back(make_pair(current_waiting_process, "DUMMY"));
-        printf("[%ld] %d\n",background_processes.size(), current_waiting_process);
+        background_processes.push_back(make_pair(current_waiting_process, command));
+        printf("\n[%ld] %d\n",background_processes.size(), current_waiting_process);
         fflush(stdout);
-        current_waiting_process = -1;
     }
+    for (auto &pr: background_processes)
+    {
+        if (pr.first == -1)
+            continue; // process already finished (waitpid() was called
+        kill(pr.first, SIGCONT);
+    }
+
+
+    
 }
 
 
@@ -57,10 +65,10 @@ void sig_handler_ctrl_Z(int signum){
 
 
 
-
-
 int main()
 {
+    signal(SIGTSTP, sig_handler_ctrl_Z); // Ctrl+Z
+
     fptr = fopen(".history", "a"); // used a option to create a file if doesn't exist
     fclose(fptr);
     fptr = fopen(".history", "r+"); // used r+ option to open file for r/w

@@ -10,3 +10,67 @@ echo hi
 echo  hi &
 clear
 exit
+clear
+exit
+clear
+exit
+clear
+exit
+clear
+python3 hello.py
+exit
+python3 hello.py
+clear
+exit
+python3 hello.py
+clear
+python3 hello.py
+clear
+exit
+sleep 10 &
+clear
+echo hi
+clear
+sleep 10
+clear
+exit
+clear
+sleep 10
+clear
+echo hi
+exit
+clear
+sleep 10 
+clear
+sleep 4 &
+clear
+exit
+clear
+sleep 1 &
+exit
+clear
+ls
+waitpid(29054, NULL, 0)
+exit
+clear
+exit
+clear
+ls
+clear
+sleep 10 &
+sleep 4
+exit
+clear
+sleep 5
+sleep 4 &
+sleep 5
+clear
+exit
+clear 
+sleep 4
+exit
+echo hi| sleep 5 | touch damn.txt | sleep 4 
+clear
+echo hi
+echo hi | sleep 20 | echo hi | sleep 5
+exit
