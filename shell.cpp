@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <signal.h>
+#include <dirent.h>
+
 #include <readline/readline.h>
 
 #define RESET "\x1B[0m"
@@ -18,6 +20,7 @@
 #define HISTSIZE 1000
 
 using namespace std;
+
 #include "global_variables.h"
 #include "wildcards.h"
 
@@ -41,11 +44,34 @@ void sig_handler_no_prompt(int signum)
     printf("\n");
 }
 
+void sig_handler_ctrl_Z(int signum){
+    if(current_waiting_process != -1){
+        BACKGROUND_FLAG = 1;
+        background_processes.push_back(make_pair(current_waiting_process, command));
+        printf("\n[%ld] %d\n",background_processes.size(), current_waiting_process);
+        fflush(stdout);
+    }
+    for (auto &pr: background_processes)
+    {
+        if (pr.first == -1)
+            continue; // process already finished (waitpid() was called
+        kill(pr.first, SIGCONT);
+    }
+
+
+    
+}
+
+
 #include "getcmd.h"
 #include "execute_single_command.h"
 
+
+
 int main()
 {
+    signal(SIGTSTP, sig_handler_ctrl_Z); // Ctrl+Z
+
     fptr = fopen(".history", "a"); // used a option to create a file if doesn't exist
     fclose(fptr);
     fptr = fopen(".history", "r+"); // used r+ option to open file for r/w
@@ -75,8 +101,8 @@ int main()
     }
     fclose(fptr);
     return 0;
-}
 
+}
 // Function to print the prompt
 const char *printPrompt()
 {

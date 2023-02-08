@@ -216,7 +216,14 @@ void execute(string command)
                 // close(pipe_fds[0]);
                 if (!BACKGROUND_FLAG)
                 {
-                    waitpid(pid, NULL, 0);
+                    current_waiting_process = pid;
+                    while(!BACKGROUND_FLAG){
+                        int chek = waitpid(pid, NULL, WNOHANG);
+                        if(chek == pid){
+                            break;
+                        }
+                    }
+                    current_waiting_process = -1;
                     int status = execute_our_command(command.substr(len + 1));
                 }
                 else
@@ -252,7 +259,14 @@ void execute(string command)
     {
         if (!BACKGROUND_FLAG)
         {
-            waitpid(pid, NULL, 0);
+            current_waiting_process = pid;
+            while(!BACKGROUND_FLAG){
+                int chek = waitpid(pid, NULL, WNOHANG);
+                if(chek == pid){
+                    break;
+                }
+            }
+            current_waiting_process = -1;
             int status = execute_our_command(command.substr(len + 1));
         }
         else
