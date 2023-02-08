@@ -1,0 +1,12 @@
+clear
+ls
+ls -l
+ls | sort -r
+clear
+ls | sort -r &
+clear
+sleep 10 &
+echo hi
+echo  hi &
+clear
+exit

@@ -27,10 +27,20 @@ using namespace std;
 
 void printPrompt(); // Function to print the prompt
 void check_background_processes(); // Function to check if any background process has finished
+
 // Function to handle the SIGINT signal (Ctrl+C) and print the prompt after that
-void sig_handler_prompt(int signum){ printf("\n"); printPrompt(); }
+void sig_handler_prompt(int signum)
+{
+    printf("^C\n");
+    command = "";
+    printPrompt();
+}
 // Function to handle the SIGINT signal (Ctrl+C) and not print the prompt after that
-void sig_handler_no_prompt(int signum){ printf("\n"); }
+void sig_handler_no_prompt(int signum)
+{
+    printf("\n");
+    command = "";
+}
 
 void sig_handler_ctrl_Z(int signum){
     if(current_waiting_process != -1){
@@ -81,16 +91,17 @@ int main()
     return 0;
 
 }
-
 // Function to print the prompt
 void printPrompt()
 {
     check_background_processes();
     usleep(1000); // 1ms sleep
     getcwd(curr_working_dir, sizeof(curr_working_dir));
-    printf("%s", RED);
     printf("%s", BOLD);
-    cout << "our-shell:" << curr_working_dir << "$ ";
+    printf("%s", GREEN);
+    cout << "our-shell:";
+    printf("%s", BLUE);
+    cout << curr_working_dir << "$ ";
     printf("%s", RESET);
     fflush(stdout);
 }

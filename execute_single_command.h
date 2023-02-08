@@ -48,12 +48,6 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
                 for (char *substitute : substitutes)
                     args.push_back(substitute);
             }
-            {
-                char *word = arg + i;
-                vector<char *> substitutes = substitute(word);
-                for (char *substitute : substitutes)
-                    args.push_back(substitute);
-            }
         }
     }
 }
@@ -63,12 +57,6 @@ void executeCD(vector<char *> &args)
 {
     if (args.size() < 2)
     {
-        cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
-        return;
-    }
-    else if (args.size() > 2)
-    {
-        cerr << "Error: cd: too many arguments. Usage: cd <directory>" << endl;
         cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
         return;
     }
@@ -94,8 +82,6 @@ void executeSingleCommand(string command)
 
     if (args.size() == 0)
         return;
-    else if (strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0) // Called from child(in case of pipe), so not useful
-        exit(EXIT_SUCCESS);
     else if (strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0) // Called from child(in case of pipe), so not useful
         exit(EXIT_SUCCESS);
 
@@ -126,7 +112,6 @@ void executeSingleCommand(string command)
         close(out);
     }
 
-    args.push_back(NULL);
     args.push_back(NULL);
     char **args_ptr = &args[0];
     // Execute arguments
@@ -190,16 +175,6 @@ void execute(string command)
                     perror("pipe");
                     exit(EXIT_FAILURE);
                 }
-                BACKGROUND_FLAG = 0;
-
-                int pipe_fds[2];
-                pid_t pid;
-
-                if (pipe(pipe_fds) == -1)
-                {
-                    perror("pipe");
-                    exit(EXIT_FAILURE);
-                }
 
                 pid = fork();
                 if (pid == -1)
@@ -210,19 +185,6 @@ void execute(string command)
 
                 if (pid == 0)
                 {
-                    BACKGROUND_FLAG = 0;
-
-                    // 1st process
-                    close(pipe_fds[0]);
-                    dup2(pipe_fds[1], STDOUT_FILENO);
-                    close(pipe_fds[1]);
-                    execute(command.substr(0, len));
-                    exit(EXIT_SUCCESS);
-                }
-
-                else
-                {
-
                     BACKGROUND_FLAG = 0;
 
                     // 1st process
@@ -254,25 +216,20 @@ void execute(string command)
                 // close(pipe_fds[0]);
                 if (!BACKGROUND_FLAG)
                 {
-                    current_waiting_process = pid;
                     while(!BACKGROUND_FLAG){
                         int chek = waitpid(pid, NULL, WNOHANG);
                         if(chek == pid){
                             break;
                         }
                     }
-                    
                     int status = execute_our_command(command.substr(len + 1));
                 }
-                else {
+                else
+                {
                     background_processes.push_back(make_pair(pid, command));
-                    printf("[%ld] %d\n",background_processes.size(), pid);
+                    printf("[%ld] %d\n", background_processes.size(), pid);
                     fflush(stdout);
                 }
-
-                // if (status == 1)
-                //     return;
-                return;
 
                 // if (status == 1)
                 //     return;
@@ -281,7 +238,6 @@ void execute(string command)
         }
     }
 
-    // IF NO PIPE
     // IF NO PIPE
 
     // fork child to execute
@@ -294,7 +250,6 @@ void execute(string command)
     else if (pid == 0)
     {
         BACKGROUND_FLAG = 0;
-        BACKGROUND_FLAG = 0;
         executeSingleCommand(command);
         exit(EXIT_SUCCESS);
     }
@@ -302,7 +257,6 @@ void execute(string command)
     {
         if (!BACKGROUND_FLAG)
         {
-            current_waiting_process = pid;
             while(!BACKGROUND_FLAG){
                 int chek = waitpid(pid, NULL, WNOHANG);
                 if(chek == pid){
@@ -311,12 +265,12 @@ void execute(string command)
             }
             int status = execute_our_command(command.substr(len + 1));
         }
-        else{
+        else
+        {
             background_processes.push_back(make_pair(pid, command));
-            printf("[%ld] %d\n",background_processes.size(), pid);
+            printf("[%ld] %d\n", background_processes.size(), pid);
             fflush(stdout);
-            
-            }
+        }
         return;
     }
 }
@@ -328,7 +282,7 @@ void parseCommand(string &command)
     while (!command.empty() && (command.back() == ' ' || command.back() == '\t' || command.back() == '\n'))
         command.pop_back();
 
-    if(command.empty())
+    if (command.empty())
         return;
 
     // find first occurance of '&' in command
@@ -340,7 +294,8 @@ void parseCommand(string &command)
             cerr << "Syntax error: tokens found after '&'" << endl;
             return;
         }
-        else{
+        else
+        {
             command.pop_back();
             BACKGROUND_FLAG = 1;
         }
