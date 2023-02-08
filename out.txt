@@ -1,8 +1,0 @@
-our-shell:/mnt/78F889B6F8897364/IITKGP/CSE-Academics/Semester 6/OS_Lab/Lab-2/our-shell$ -rwxrwxrwx 1 root root  1020 Feb  6 23:55 shell.cpp
--rwxrwxrwx 1 root root    11 Feb  6 20:56 README.md
--rwxrwxrwx 1 root root    23 Feb  7 01:02 cust.txt
--rwxrwxrwx 1 root root 31864 Feb  7 01:08 shell
--rwxrwxrwx 1 root root  4717 Feb  7 01:08 execute_single_command.h
--rwxrwxrwx 1 root root    57 Feb  6 20:56 global_variables.h
--rwxrwxrwx 1 root root    88 Feb  7 01:08 out.txt
-total 46
