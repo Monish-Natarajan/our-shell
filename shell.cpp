@@ -22,24 +22,26 @@
 using namespace std;
 
 #include "global_variables.h"
-#include "getcmd.h"
 #include "wildcards.h"
 
-void printPrompt(); // Function to print the prompt
+const char *printPrompt();         // Function to print the prompt
 void check_background_processes(); // Function to check if any background process has finished
 
 // Function to handle the SIGINT signal (Ctrl+C) and print the prompt after that
 void sig_handler_prompt(int signum)
 {
-    printf("^C\n");
-    command = "";
-    printPrompt();
+    string tmpc = rl_line_buffer;
+    rl_replace_line("", 0);
+    rl_redisplay();
+    rl_point = rl_end;
+    printf("%s%s^C", printPrompt(), tmpc.c_str());
+    printf("\n%s", printPrompt());
 }
+
 // Function to handle the SIGINT signal (Ctrl+C) and not print the prompt after that
 void sig_handler_no_prompt(int signum)
 {
     printf("\n");
-    command = "";
 }
 
 void sig_handler_ctrl_Z(int signum){
@@ -61,6 +63,7 @@ void sig_handler_ctrl_Z(int signum){
 }
 
 
+#include "getcmd.h"
 #include "execute_single_command.h"
 
 
@@ -85,6 +88,7 @@ int main()
         hist.push_back(str);
     }
     fseek(fptr, 0, SEEK_SET);
+    bool f = 0;
     while (true)
     {
         vector ar = background_processes;
@@ -100,18 +104,13 @@ int main()
 
 }
 // Function to print the prompt
-void printPrompt()
+const char *printPrompt()
 {
     check_background_processes();
-    usleep(1000); // 1ms sleep
     getcwd(curr_working_dir, sizeof(curr_working_dir));
-    printf("%s", BOLD);
-    printf("%s", GREEN);
-    cout << "our-shell:";
-    printf("%s", BLUE);
-    cout << curr_working_dir << "$ ";
-    printf("%s", RESET);
+    sprintf(prompt, "%s%sSHELL++:%s%s$ %s", BOLD, GREEN, BLUE, curr_working_dir, RESET);
     fflush(stdout);
+    return prompt;
 }
 
 // Function to check if any background process has finished
