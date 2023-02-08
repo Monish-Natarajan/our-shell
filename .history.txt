@@ -1,4 +1,18 @@
 ls
-ls | grep ^c
+ls | grep ^
 ls
+exit
+ls
+ls | grep ^c
+sleep 5 | echo hi &
+git branch
+exit
+sleep 5 | echo hi &
+ls
+bash
+sleep 5 | echo hi &
+done
+ls
+echo hi &
+bash
 exit
