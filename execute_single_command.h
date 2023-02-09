@@ -1,57 +1,54 @@
-char *nextArg(char *&stringp){
-    
-    while(*stringp == ' ' || *stringp == '\t') stringp++;
-    if(*stringp == '\0') return NULL;
+char *nextArg(char *&stringp) {
+    while (*stringp == ' ' || *stringp == '\t') stringp++;
+    if (*stringp == '\0') return NULL;
     char *arg = stringp;
 
-    if(*arg=='"') {
+    if (*arg == '"') {
         arg++;
         stringp++;
-        while(1){ //*stringp != '"' && *stringp != '\0'){
-            if(*stringp == '\\'){
-                if(*(stringp+1) == '"' || *(stringp+1) == '\'' || *(stringp+1) == '\\'){
-                    strcpy(stringp, stringp+1);
+        while (1) {    //*stringp != '"' && *stringp != '\0'){
+            if (*stringp == '\\') {
+                if (*(stringp + 1) == '"' || *(stringp + 1) == '\'' || *(stringp + 1) == '\\') {
+                    strcpy(stringp, stringp + 1);
                 }
                 stringp++;
             }
-            if(*stringp == '"') break;
-            if(*stringp == '\0') break;
+            if (*stringp == '"') break;
+            if (*stringp == '\0') break;
             stringp++;
         }
-        if(*stringp == '"') *stringp++ = '\0';
+        if (*stringp == '"') *stringp++ = '\0';
         return arg;
     }
 
-    if(*arg=='\'') {
+    if (*arg == '\'') {
         arg++;
         stringp++;
-        while(1){ //*stringp != '"' && *stringp != '\0'){
-            if(*stringp == '\\'){
-                if(*(stringp+1) == '\'' || *(stringp+1) == '"' || *(stringp+1) == '\\'){
-                    strcpy(stringp, stringp+1);
+        while (1) {    //*stringp != '"' && *stringp != '\0'){
+            if (*stringp == '\\') {
+                if (*(stringp + 1) == '\'' || *(stringp + 1) == '"' || *(stringp + 1) == '\\') {
+                    strcpy(stringp, stringp + 1);
                 }
                 stringp++;
             }
-            if(*stringp == '\'') break;
-            if(*stringp == '\0') break;
+            if (*stringp == '\'') break;
+            if (*stringp == '\0') break;
             stringp++;
         }
-        if(*stringp == '\'') *stringp++ = '\0';
+        if (*stringp == '\'') *stringp++ = '\0';
         return arg;
     }
 
-    while(*stringp != ' ' && *stringp != '\t' && *stringp != '\0') 
+    while (*stringp != ' ' && *stringp != '\t' && *stringp != '\0')
         stringp++;
 
-    if(*stringp != '\0') *stringp++ = '\0';
+    if (*stringp != '\0') *stringp++ = '\0';
     return arg;
 }
 
 // gets arguments from a single command
-void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect)
-{
-    while (1)
-    {
+void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect) {
+    while (1) {
         char *arg = nextArg(stringp);
         if (arg == NULL)
             break;
@@ -99,8 +96,8 @@ void executeSingleCommand(string command) {
     if (args.size() == 0)
         return;
     else if (strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0 || strcmp(args[0], "delep") == 0 || strcmp(args[0], "pwd") == 0)
-    // Called from child(in case of pipe), so not useful
-    exit(EXIT_SUCCESS);
+        // Called from child(in case of pipe), so not useful
+        exit(EXIT_SUCCESS);
 
     if (fInRedirect != 0) {
         // open input file

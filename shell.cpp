@@ -41,17 +41,13 @@ void sig_handler_no_prompt(int signum) {
     printf("\n");
 }
 
-void sig_handler_ctrl_Z(int signum)
-{
-    if (current_waiting_process != -1)
-    {
+void sig_handler_ctrl_Z(int signum) {
+    if (current_waiting_process != -1) {
         BACKGROUND_FLAG = 1;
         background_processes.push_back(make_pair(current_waiting_process, command));
         printf("\n[%ld] %d\n", background_processes.size(), current_waiting_process);
         fflush(stdout);
-    }
-    else
-    {
+    } else {
         string tmpc = rl_line_buffer;
         rl_replace_line("", 0);
         rl_redisplay();
@@ -59,22 +55,20 @@ void sig_handler_ctrl_Z(int signum)
         printf("%s%s^Z", printPrompt(), tmpc.c_str());
         printf("\n%s", printPrompt());
     }
-    for (auto &pr : background_processes)
-    {
+    for (auto &pr : background_processes) {
         if (pr.first == -1)
             continue;    // process already finished (waitpid() was called
         kill(pr.first, SIGCONT);
     }
 }
 
-#include "getcmd.h"
 #include "execute_single_command.h"
+#include "getcmd.h"
 
-int main()
-{
-    signal(SIGTSTP, sig_handler_ctrl_Z); // Ctrl+Z
+int main() {
+    signal(SIGTSTP, sig_handler_ctrl_Z);    // Ctrl+Z
 
-    fptr = fopen(".history", "a"); // used a option to create a file if doesn't exist
+    fptr = fopen(".history", "a");    // used a option to create a file if doesn't exist
     fclose(fptr);
     fptr = fopen(".history", "r+");    // used r+ option to open file for r/w
     if (!fptr) {
