@@ -1,6 +1,5 @@
 #include <iostream>
 #include <deque>
-#include <termios.h>
 #include <unistd.h>
 #include <string.h>
 #include <vector>
@@ -8,7 +7,6 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <signal.h>
-#include <dirent.h>
 
 #include <readline/readline.h>
 
@@ -113,7 +111,8 @@ const char *printPrompt()
 {
     check_background_processes();
     getcwd(curr_working_dir, sizeof(curr_working_dir));
-    sprintf(prompt, "%s%sSHELL++:%s%s$ %s", BOLD, GREEN, BLUE, curr_working_dir, RESET);
+    sprintf(prompt, "SHELL++:%s$ ", curr_working_dir);
+    // sprintf(prompt, "%s%sSHELL++:%s%s$ %s", BOLD, GREEN, BLUE, curr_working_dir, RESET);
     fflush(stdout);
     return prompt;
 }
