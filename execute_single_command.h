@@ -1,3 +1,100 @@
+
+int get_cpu_util(pid_t pid) {
+    string line;
+    string path = "/proc/" + to_string(pid) + "/stat";
+    ifstream stat_stream(path);
+    if (!stat_stream.is_open()) {
+        cerr << "Error: failed to open file '" << path << "'" << endl;
+    }
+    getline(stat_stream, line);
+    istringstream line_stream(line);
+
+    // The CPU utilization is stored as the 14th and 15th values in the line.
+    // The memory utilization is stored as the 22nd value in the line.
+    long long utime, stime, start_time, uptime;
+    for (int i = 0; i < 23; ++i) {
+        if (i == 13)
+            line_stream >> utime;
+        else if (i == 14)
+            line_stream >> stime;
+        else if (i == 22) {
+            line_stream >> start_time;
+            // cout << "reading start time " << start_time << "\n";
+        } else
+            line_stream.ignore(numeric_limits<streamsize>::max(), ' ');
+    }
+
+    string path2 = "/proc/uptime";
+    ifstream stat_stream2(path2);
+    if (!stat_stream2.is_open()) {
+        cerr << "Error: failed to open file '" << path2 << "'" << endl;
+    }
+    getline(stat_stream2, line);
+    istringstream line_stream2(line);
+    line_stream2 >> uptime;
+    uptime *= 100;    // converting to clock ticks
+    double cpu_util = (stime + utime) * 100.0 / (uptime - start_time);
+
+    // Print the results.
+    // cout << "utime and stime " << utime << " + " << stime << endl;
+    // cout << "Start Time: " << start_time << endl;
+    // cout << "Uptime: " << uptime << " " << endl;
+    // cout << "CPU Utilization: " << cpu_util << "\n";
+    return cpu_util;
+}
+
+vector<string> list_dir(string path) {
+    vector<string> list_dirs;
+    DIR *d;
+    struct dirent *dir;
+    d = opendir(path.c_str());
+    if (d) {
+        while ((dir = readdir(d)) != NULL) {
+            list_dirs.push_back(dir->d_name);
+        }
+        closedir(d);
+    }
+    return list_dirs;
+}
+
+int get_heur(pid_t pid) {
+    int heur = 0, child_util;
+    vector<string> list_dirs;
+    string path = "/proc/" + to_string(pid) + "/task";
+    list_dirs = list_dir(path);
+
+    for (int i = 0; i < list_dirs.size(); i++) {
+        if (i == 0 || i == 1) continue;
+        string tid = list_dirs[i];
+        // cout << tid << " ";
+        path = "/proc/" + to_string(pid) + "/task/" + tid + "/children";
+        ifstream stat_stream(path);
+        if (!stat_stream.is_open()) {
+            cerr << "Error: failed to open file '" << path << "'" << endl;
+            return 2;
+        }
+        string line;
+        getline(stat_stream, line);
+        istringstream line_stream(line);
+        pid_t cpid;
+
+        while (!line_stream.eof()) {
+            line_stream >> cpid;
+            if (cpid <= 0) continue;
+            child_util = get_cpu_util(cpid);
+            cout << "child " << cpid << " utilization " << child_util << "%\n";
+            heur += child_util;
+        }
+    }
+    return heur;
+}
+
+
+
+
+
+
+
 char *nextArg(char *&stringp) {
     while (*stringp == ' ' || *stringp == '\t') stringp++;
     if (*stringp == '\0') return NULL;
@@ -87,65 +184,6 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
     }
 }
 
-// Function to execute a single commands
-void executeSingleCommand(string command) {
-    vector<char *> args;
-    int fInRedirect = 0, fOutRedirect = 0;
-    getArgs((char *)command.c_str(), args, fInRedirect, fOutRedirect);
-
-    if (args.size() == 0)
-        return;
-    else if (strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0 || strcmp(args[0], "delep") == 0 || strcmp(args[0], "pwd") == 0)
-        // Called from child(in case of pipe), so not useful
-        exit(EXIT_SUCCESS);
-
-    if (fInRedirect != 0) {
-        // open input file
-        int in = open(args[fInRedirect], O_RDONLY);
-        if (in == -1) {
-            cerr << "Error opening file: " << args[fInRedirect] << endl;
-            exit(1);
-        }
-        // copy file_desc to STDIN
-        dup2(in, STDIN_FILENO);
-        close(in);
-    }
-    if (fOutRedirect != 0) {
-        // open output file
-        int out = open(args[fOutRedirect], O_WRONLY | O_TRUNC | O_CREAT, 0644);
-        if (out == -1) {
-            cerr << "Error opening file: " << args[fInRedirect] << endl;
-            exit(1);
-        }
-        // copy file_desc to STDOUT
-        dup2(out, STDOUT_FILENO);
-        close(out);
-    }
-
-    args.push_back(NULL);
-    char **args_ptr = &args[0];
-    // Execute arguments
-    if (execvp(args[0], args_ptr) < 0) {
-        cerr << "Error in executing command" << endl;
-    }
-}
-
-// Function to change directory
-void executeCD(vector<char *> &args) {
-    if (args.size() < 2) {
-        cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
-        return;
-    } else if (args.size() > 2) {
-        cerr << "Error: cd: too many arguments. Usage: cd <directory>" << endl;
-        return;
-    }
-
-    if (chdir(args[1]) != 0) {
-        cerr << "Error: unable to change directory to \"" << args[1] << "\"" << endl;
-        return;
-    }
-}
-
 // Function to execute pwd
 void executePwd() {
     char cwd[PATH_MAX];
@@ -205,6 +243,136 @@ void execeuteDelep(vector<char *> &args) {
     }
 }
 
+// Function to execute sb **squash bug**
+void executeSb(vector<char *> &args) {
+    if (args.size() < 2 || args.size() > 3) {
+        perror("Syntax error: Usage: sb <<pid>> [--suggest]\n");
+        return;
+    }
+    int pid = atoi(args[1]);
+    bool suggest = 0;
+    if (args.size() == 3)
+        suggest = 1;
+    string path, status;
+    pid_t ppid, ptid, mlw_pid = -1;
+    // ppid -> id of parent process, ptid -> id of controlling terminal
+
+    for (int i = 0; i < 3; i++) {
+        // open /proc/[pid]/stat
+        path = "/proc/" + to_string(pid) + "/stat";
+        ifstream stat_stream(path);
+        if (!stat_stream.is_open()) {
+            cerr << "Error: failed to open file '" << path << "'" << endl;
+            return;
+        }
+
+        string line;
+        getline(stat_stream, line);
+        istringstream line_stream(line);
+
+        for (int i = 0; i < 7; ++i) {
+            if (i == 2) line_stream >> status;
+            if (i == 3) line_stream >> ppid;
+            if (i == 6)
+                line_stream >> ptid;
+            else
+                line_stream.ignore(numeric_limits<streamsize>::max(), ' ');
+        }
+        cout << "gen  " << i << " pid: " << pid << " status : " << status << endl;
+
+        if (suggest == 1) {
+            int heur = get_heur(pid);
+            cout << "heuristic " << heur << " status " << status << "\n";
+            if (heur > ALERT_LIMIT && status == "S")    // can replace with diff checker_fn()
+            {
+                mlw_pid = pid;
+                break;
+            }
+        }
+        pid = ppid;
+    }
+    if (suggest == 1) {
+        if (mlw_pid > 0)
+            cout << "Detected Malware PID : " << mlw_pid << "\n";
+        else
+            cout << "Malware not found \n";
+    }
+}
+
+// Function to execute a single commands
+void executeSingleCommand(string command) {
+    vector<char *> args;
+    int fInRedirect = 0, fOutRedirect = 0;
+    getArgs((char *)command.c_str(), args, fInRedirect, fOutRedirect);
+
+    if (args.size() == 0)
+        return;
+    else if (strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0)
+        // Called from child(in case of pipe), so not useful
+        exit(EXIT_SUCCESS);
+    // handle pwd from shell
+    else if (strcmp(args[0], "pwd") == 0) {
+        executePwd();
+        exit(EXIT_SUCCESS);
+    }
+    // handle delep from shell
+    else if (strcmp(args[0], "delep") == 0) {
+        execeuteDelep(args);
+        exit(EXIT_SUCCESS);
+    }
+    // handle sb (squash bug) from shell
+    else if (strcmp(args[0], "sb") == 0) {
+        executeSb(args);
+        exit(EXIT_SUCCESS);
+    }
+
+    if (fInRedirect != 0) {
+        // open input file
+        int in = open(args[fInRedirect], O_RDONLY);
+        if (in == -1) {
+            cerr << "Error opening file: " << args[fInRedirect] << endl;
+            exit(1);
+        }
+        // copy file_desc to STDIN
+        dup2(in, STDIN_FILENO);
+        close(in);
+    }
+    if (fOutRedirect != 0) {
+        // open output file
+        int out = open(args[fOutRedirect], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+        if (out == -1) {
+            cerr << "Error opening file: " << args[fInRedirect] << endl;
+            exit(1);
+        }
+        // copy file_desc to STDOUT
+        dup2(out, STDOUT_FILENO);
+        close(out);
+    }
+
+    args.push_back(NULL);
+    char **args_ptr = &args[0];
+    // Execute arguments
+    if (execvp(args[0], args_ptr) < 0) {
+        cerr << "Error in executing command" << endl;
+    }
+}
+
+// Function to change directory
+void executeCD(vector<char *> &args) {
+    if (args.size() < 2) {
+        cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
+        return;
+    } else if (args.size() > 2) {
+        cerr << "Error: cd: too many arguments. Usage: cd <directory>" << endl;
+        return;
+    }
+
+    if (chdir(args[1]) != 0) {
+        cerr << "Error: unable to change directory to \"" << args[1] << "\"" << endl;
+        return;
+    }
+}
+
 int execute_our_command(string command) {
     vector<char *> args;
     int fInRedirect = 0, fOutRedirect = 0;
@@ -220,19 +388,9 @@ int execute_our_command(string command) {
         printf("exit\n");
         exit(0);
     }
-    // handle pwd from shell
-    else if (strcmp(args[0], "pwd") == 0) {
-        executePwd();
-        return 1;
-    }
     // handle cd from shell
     else if (strcmp(args[0], "cd") == 0) {
         executeCD(args);
-        return 1;
-    }
-    // handle delep from shell
-    else if (strcmp(args[0], "delep") == 0) {
-        execeuteDelep(args);
         return 1;
     }
     return 0;
@@ -366,3 +524,4 @@ void parseCommand(string &command) {
     }
     execute(command);
 }
+

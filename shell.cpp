@@ -6,6 +6,8 @@
 #include <termios.h>
 #include <unistd.h>
 #include <wait.h>
+#include <fstream>
+#include <bits/stdc++.h>
 
 #include <deque>
 #include <iostream>
