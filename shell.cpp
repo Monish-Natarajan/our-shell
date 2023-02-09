@@ -1,14 +1,15 @@
-#include <iostream>
-#include <deque>
-#include <unistd.h>
-#include <string.h>
-#include <vector>
-#include <wait.h>
-#include <fcntl.h>
 #include <dirent.h>
-#include <signal.h>
-
+#include <fcntl.h>
 #include <readline/readline.h>
+#include <signal.h>
+#include <string.h>
+#include <termios.h>
+#include <unistd.h>
+#include <wait.h>
+
+#include <deque>
+#include <iostream>
+#include <vector>
 
 #define RESET "\x1B[0m"
 #define BOLD "\x1B[1m"
@@ -68,8 +69,8 @@ void sig_handler_ctrl_Z(int signum)
     }
 }
 
-#include "getcmd.h"
 #include "execute_single_command.h"
+#include "getcmd.h"
 
 int main()
 {

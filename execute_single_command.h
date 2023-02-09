@@ -1,29 +1,66 @@
-char *nextArg(char *&stringp){
-    
-    while(*stringp == ' ' || *stringp == '\t') stringp++;
-    if(*stringp == '\0') return NULL;
+char *nextArg(char *&stringp)
+{
+    while (*stringp == ' ' || *stringp == '\t')
+        stringp++;
+    if (*stringp == '\0')
+        return NULL;
     char *arg = stringp;
 
-    if(*arg=='"') {
+    if (*arg == '"')
+    {
         arg++;
         stringp++;
-        while(*stringp != '"' && *stringp != '\0') stringp++;
-        if(*stringp == '"') *stringp++ = '\0';
+        while (1)
+        { //*stringp != '"' && *stringp != '\0'){
+            if (*stringp == '\\')
+            {
+                if (*(stringp + 1) == '"' || *(stringp + 1) == '\'' || *(stringp + 1) == '\\')
+                {
+                    strcpy(stringp, stringp + 1);
+                }
+                stringp++;
+            }
+            if (*stringp == '"')
+                break;
+            if (*stringp == '\0')
+                break;
+            stringp++;
+        }
+        if (*stringp == '"')
+            *stringp++ = '\0';
         return arg;
     }
 
-    if(*arg=='\'') {
+    if (*arg == '\'')
+    {
         arg++;
         stringp++;
-        while(*stringp != '\'' && *stringp != '\0') stringp++;
-        if(*stringp == '\'') *stringp++ = '\0';
+        while (1)
+        { //*stringp != '"' && *stringp != '\0'){
+            if (*stringp == '\\')
+            {
+                if (*(stringp + 1) == '\'' || *(stringp + 1) == '"' || *(stringp + 1) == '\\')
+                {
+                    strcpy(stringp, stringp + 1);
+                }
+                stringp++;
+            }
+            if (*stringp == '\'')
+                break;
+            if (*stringp == '\0')
+                break;
+            stringp++;
+        }
+        if (*stringp == '\'')
+            *stringp++ = '\0';
         return arg;
     }
 
-    while(*stringp != ' ' && *stringp != '\t' && *stringp != '\0') 
+    while (*stringp != ' ' && *stringp != '\t' && *stringp != '\0')
         stringp++;
 
-    if(*stringp != '\0') *stringp++ = '\0';
+    if (*stringp != '\0')
+        *stringp++ = '\0';
     return arg;
 }
 
@@ -79,27 +116,6 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
         }
     }
 }
- 
-// Function to change directory
-void executeCD(vector<char *> &args)
-{
-    if (args.size() < 2)
-    {
-        cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
-        return;
-    }
-    else if (args.size() > 2)
-    {
-        cerr << "Error: cd: too many arguments. Usage: cd <directory>" << endl;
-        return;
-    }
-
-    if (chdir(args[1]) != 0)
-    {
-        cerr << "Error: unable to change directory to \"" << args[1] << "\"" << endl;
-        return;
-    }
-}
 
 // Function to execute a single commands
 void executeSingleCommand(string command)
@@ -110,7 +126,8 @@ void executeSingleCommand(string command)
 
     if (args.size() == 0)
         return;
-    else if (strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0) // Called from child(in case of pipe), so not useful
+    else if (strcmp(args[0], "exit") == 0 || strcmp(args[0], "cd") == 0 || strcmp(args[0], "delep") == 0 || strcmp(args[0], "pwd") == 0)
+        // Called from child(in case of pipe), so not useful
         exit(EXIT_SUCCESS);
 
     if (fInRedirect != 0)
@@ -149,6 +166,101 @@ void executeSingleCommand(string command)
     }
 }
 
+// Function to change directory
+void executeCD(vector<char *> &args)
+{
+    if (args.size() < 2)
+    {
+        cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
+        return;
+    }
+    else if (args.size() > 2)
+    {
+        cerr << "Error: cd: too many arguments. Usage: cd <directory>" << endl;
+        return;
+    }
+
+    if (chdir(args[1]) != 0)
+    {
+        cerr << "Error: unable to change directory to \"" << args[1] << "\"" << endl;
+        return;
+    }
+}
+
+// Function to execute pwd
+void executePwd()
+{
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+    {
+        printf("%s\n", cwd);
+    }
+    else
+    {
+        perror("Error: Unable to get current working directory\n");
+    }
+}
+
+// Function to get pids of processes having file open or holding lock over file
+void get_pids(string filepath, vector<pid_t> &pids)
+{
+    string ex = "lsof -t " + filepath;
+    FILE *fp = popen(ex.c_str(), "r");
+    if (fp == NULL)
+    {
+        perror("Error running lsof");
+        return;
+    }
+    int p;
+    while (fscanf(fp, "%d", &p) == 1)
+    {
+        pids.push_back(p);
+    }
+    pclose(fp);
+}
+
+// Function to execute delep **delete with extreme prejudice**
+void execeuteDelep(vector<char *> &args)
+{
+    if (args.size() != 2)
+    {
+        perror("Syntax error: Usage: delep <<filepath>>\n");
+        return;
+    }
+    vector<pid_t> pids;
+    get_pids(args[1], pids);
+    bool consent = 0;
+    if (pids.empty())
+    {
+        printf("No process found with open file: %s\n", args[1]);
+        if (remove(args[1]) != 0)
+            perror("Error deleting file\n");
+        else
+            printf("%s deleted succesfully!\n", args[1]);
+    }
+    else
+    {
+        printf("The following processes have the file open or are holding a lock:\n");
+        for (auto &p : pids)
+            printf("%d ", p);
+        char ans[MAX_INPUT];
+        printf("\nDo you want to kill all these processes and delete file? (yes/no): ");
+        scanf("%s", ans);
+        if (strcmp(ans, "yes") == 0)
+        {
+            for (auto &p : pids)
+            {
+                // Function to kill process with given pid
+                kill(p, SIGKILL);
+            }
+            if (remove(args[1]) != 0)
+                perror("Error deleting file\n");
+            else
+                printf("%s deleted succesfully!\n", args[1]);
+        }
+    }
+}
+
 int execute_our_command(string command)
 {
     vector<char *> args;
@@ -167,10 +279,22 @@ int execute_our_command(string command)
         printf("exit\n");
         exit(0);
     }
+    // handle pwd from shell
+    else if (strcmp(args[0], "pwd") == 0)
+    {
+        executePwd();
+        return 1;
+    }
     // handle cd from shell
     else if (strcmp(args[0], "cd") == 0)
     {
         executeCD(args);
+        return 1;
+    }
+    // handle delep from shell
+    else if (strcmp(args[0], "delep") == 0)
+    {
+        execeuteDelep(args);
         return 1;
     }
     return 0;
@@ -183,7 +307,6 @@ void execute(string command)
     {
         if (command[len] == '|')
         {
-
             pid_t pid = fork();
             if (pid == -1)
             {
@@ -225,7 +348,6 @@ void execute(string command)
 
                 else
                 {
-
                     // 2nd process
 
                     close(pipe_fds[1]);
@@ -238,16 +360,17 @@ void execute(string command)
             }
             else
             {
-
                 // parent process
                 // close(pipe_fds[1]);
                 // close(pipe_fds[0]);
                 if (!BACKGROUND_FLAG)
                 {
                     current_waiting_process = pid;
-                    while(!BACKGROUND_FLAG){
+                    while (!BACKGROUND_FLAG)
+                    {
                         int chek = waitpid(pid, NULL, WNOHANG);
-                        if(chek == pid){
+                        if (chek == pid)
+                        {
                             break;
                         }
                     }
@@ -288,9 +411,11 @@ void execute(string command)
         if (!BACKGROUND_FLAG)
         {
             current_waiting_process = pid;
-            while(!BACKGROUND_FLAG){
+            while (!BACKGROUND_FLAG)
+            {
                 int chek = waitpid(pid, NULL, WNOHANG);
-                if(chek == pid){
+                if (chek == pid)
+                {
                     break;
                 }
             }
