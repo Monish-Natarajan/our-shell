@@ -1,8 +1,28 @@
 char *nextArg(char *&stringp){
+    
     while(*stringp == ' ' || *stringp == '\t') stringp++;
     if(*stringp == '\0') return NULL;
     char *arg = stringp;
-    while(*stringp != ' ' && *stringp != '\t' && *stringp != '\0') stringp++;
+
+    if(*arg=='"') {
+        arg++;
+        stringp++;
+        while(*stringp != '"' && *stringp != '\0') stringp++;
+        if(*stringp == '"') *stringp++ = '\0';
+        return arg;
+    }
+
+    if(*arg=='\'') {
+        arg++;
+        stringp++;
+        while(*stringp != '\'' && *stringp != '\0') stringp++;
+        if(*stringp == '\'') *stringp++ = '\0';
+        return arg;
+    }
+
+    while(*stringp != ' ' && *stringp != '\t' && *stringp != '\0') 
+        stringp++;
+
     if(*stringp != '\0') *stringp++ = '\0';
     return arg;
 }
