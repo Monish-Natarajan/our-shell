@@ -1,10 +1,18 @@
+char *nextArg(char *&stringp){
+    while(*stringp == ' ' || *stringp == '\t') stringp++;
+    if(*stringp == '\0') return NULL;
+    char *arg = stringp;
+    while(*stringp != ' ' && *stringp != '\t' && *stringp != '\0') stringp++;
+    if(*stringp != '\0') *stringp++ = '\0';
+    return arg;
+}
 
 // gets arguments from a single command
 void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect)
 {
     while (1)
     {
-        char *arg = strsep(&stringp, " \t");
+        char *arg = nextArg(stringp);
         if (arg == NULL)
             break;
         if (strlen(arg) == 0)
@@ -51,7 +59,7 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
         }
     }
 }
-
+ 
 // Function to change directory
 void executeCD(vector<char *> &args)
 {
