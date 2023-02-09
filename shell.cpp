@@ -1,16 +1,15 @@
-#include <iostream>
-#include <deque>
+#include <dirent.h>
+#include <fcntl.h>
+#include <readline/readline.h>
+#include <signal.h>
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
-#include <string.h>
-#include <vector>
 #include <wait.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <signal.h>
-#include <dirent.h>
 
-#include <readline/readline.h>
+#include <deque>
+#include <iostream>
+#include <vector>
 
 #define RESET "\x1B[0m"
 #define BOLD "\x1B[1m"
@@ -24,12 +23,11 @@ using namespace std;
 #include "global_variables.h"
 #include "wildcards.h"
 
-const char *printPrompt();         // Function to print the prompt
-void check_background_processes(); // Function to check if any background process has finished
+const char *printPrompt();            // Function to print the prompt
+void check_background_processes();    // Function to check if any background process has finished
 
 // Function to handle the SIGINT signal (Ctrl+C) and print the prompt after that
-void sig_handler_prompt(int signum)
-{
+void sig_handler_prompt(int signum) {
     string tmpc = rl_line_buffer;
     rl_replace_line("", 0);
     rl_redisplay();
@@ -39,49 +37,38 @@ void sig_handler_prompt(int signum)
 }
 
 // Function to handle the SIGINT signal (Ctrl+C) and not print the prompt after that
-void sig_handler_no_prompt(int signum)
-{
+void sig_handler_no_prompt(int signum) {
     printf("\n");
 }
 
-void sig_handler_ctrl_Z(int signum){
-    if(current_waiting_process != -1){
+void sig_handler_ctrl_Z(int signum) {
+    if (current_waiting_process != -1) {
         BACKGROUND_FLAG = 1;
         background_processes.push_back(make_pair(current_waiting_process, command));
-        printf("\n[%ld] %d\n",background_processes.size(), current_waiting_process);
+        printf("\n[%ld] %d\n", background_processes.size(), current_waiting_process);
         fflush(stdout);
     }
-    for (auto &pr: background_processes)
-    {
+    for (auto &pr : background_processes) {
         if (pr.first == -1)
-            continue; // process already finished (waitpid() was called
+            continue;    // process already finished (waitpid() was called
         kill(pr.first, SIGCONT);
     }
-
-
-    
 }
 
-
-#include "getcmd.h"
 #include "execute_single_command.h"
+#include "getcmd.h"
 
+int main() {
+    signal(SIGTSTP, sig_handler_ctrl_Z);    // Ctrl+Z
 
-
-int main()
-{
-    signal(SIGTSTP, sig_handler_ctrl_Z); // Ctrl+Z
-
-    fptr = fopen(".history", "a"); // used a option to create a file if doesn't exist
+    fptr = fopen(".history", "a");    // used a option to create a file if doesn't exist
     fclose(fptr);
-    fptr = fopen(".history", "r+"); // used r+ option to open file for r/w
-    if (!fptr)
-    {
+    fptr = fopen(".history", "r+");    // used r+ option to open file for r/w
+    if (!fptr) {
         printf("history couldn't be accesed\n");
     }
     char str[MAXCMDLEN];
-    while (fgets(str, MAXCMDLEN, fptr))
-    {
+    while (fgets(str, MAXCMDLEN, fptr)) {
         int len = strlen(str);
         if (str[len - 1] == '\n')
             str[len - 1] = '\0';
@@ -89,8 +76,7 @@ int main()
     }
     fseek(fptr, 0, SEEK_SET);
     bool f = 0;
-    while (true)
-    {
+    while (true) {
         vector ar = background_processes;
         printPrompt();
         signal(SIGINT, sig_handler_prompt);
@@ -101,11 +87,9 @@ int main()
     }
     fclose(fptr);
     return 0;
-
 }
 // Function to print the prompt
-const char *printPrompt()
-{
+const char *printPrompt() {
     check_background_processes();
     getcwd(curr_working_dir, sizeof(curr_working_dir));
     sprintf(prompt, "%s%sSHELL++:%s%s$ %s", BOLD, GREEN, BLUE, curr_working_dir, RESET);
@@ -114,16 +98,13 @@ const char *printPrompt()
 }
 
 // Function to check if any background process has finished
-void check_background_processes()
-{
-    for (int i = 0; i < background_processes.size(); i++)
-    {
+void check_background_processes() {
+    for (int i = 0; i < background_processes.size(); i++) {
         if (background_processes[i].first == -1)
-            continue; // process already finished (waitpid() was called
+            continue;    // process already finished (waitpid() was called
         int status;
         pid_t pid = waitpid(background_processes[i].first, &status, WNOHANG);
-        if (pid > 0)
-        {
+        if (pid > 0) {
             printf("[%d] Done\t\t", i + 1);
             printf("%s\n", background_processes[i].second.c_str());
             fflush(stdout);
