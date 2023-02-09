@@ -44,29 +44,34 @@ void sig_handler_no_prompt(int signum)
     printf("\n");
 }
 
-void sig_handler_ctrl_Z(int signum){
-    if(current_waiting_process != -1){
+void sig_handler_ctrl_Z(int signum)
+{
+    if (current_waiting_process != -1)
+    {
         BACKGROUND_FLAG = 1;
         background_processes.push_back(make_pair(current_waiting_process, command));
-        printf("\n[%ld] %d\n",background_processes.size(), current_waiting_process);
+        printf("\n[%ld] %d\n", background_processes.size(), current_waiting_process);
         fflush(stdout);
     }
-    for (auto &pr: background_processes)
+    else
+    {
+        string tmpc = rl_line_buffer;
+        rl_replace_line("", 0);
+        rl_redisplay();
+        rl_point = rl_end;
+        printf("%s%s^Z", printPrompt(), tmpc.c_str());
+        printf("\n%s", printPrompt());
+    }
+    for (auto &pr : background_processes)
     {
         if (pr.first == -1)
             continue; // process already finished (waitpid() was called
         kill(pr.first, SIGCONT);
     }
-
-
-    
 }
-
 
 #include "getcmd.h"
 #include "execute_single_command.h"
-
-
 
 int main()
 {
@@ -101,8 +106,8 @@ int main()
     }
     fclose(fptr);
     return 0;
-
 }
+
 // Function to print the prompt
 const char *printPrompt()
 {
