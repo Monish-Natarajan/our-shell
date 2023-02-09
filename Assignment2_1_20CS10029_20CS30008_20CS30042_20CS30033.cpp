@@ -5,6 +5,9 @@ Members: Gaurav Malakar,    20CS10029
          Atishay Jain,      20CS30008
          Roopak Priydarshi, 20CS30042
          Monish Natarajan,  20CS30033
+
+Run with command:- 
+g++ Assignment2_1_20CS10029_20CS30008_20CS30042_20CS30033.cpp -o ourshell -lreadline ; ./ourshell
 */
 
 #include <dirent.h>
