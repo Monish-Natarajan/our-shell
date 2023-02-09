@@ -7,7 +7,17 @@ char *nextArg(char *&stringp){
     if(*arg=='"') {
         arg++;
         stringp++;
-        while(*stringp != '"' && *stringp != '\0') stringp++;
+        while(1){ //*stringp != '"' && *stringp != '\0'){
+            if(*stringp == '\\'){
+                if(*(stringp+1) == '"' || *(stringp+1) == '\'' || *(stringp+1) == '\\'){
+                    strcpy(stringp, stringp+1);
+                }
+                stringp++;
+            }
+            if(*stringp == '"') break;
+            if(*stringp == '\0') break;
+            stringp++;
+        }
         if(*stringp == '"') *stringp++ = '\0';
         return arg;
     }
@@ -15,7 +25,17 @@ char *nextArg(char *&stringp){
     if(*arg=='\'') {
         arg++;
         stringp++;
-        while(*stringp != '\'' && *stringp != '\0') stringp++;
+        while(1){ //*stringp != '"' && *stringp != '\0'){
+            if(*stringp == '\\'){
+                if(*(stringp+1) == '\'' || *(stringp+1) == '"' || *(stringp+1) == '\\'){
+                    strcpy(stringp, stringp+1);
+                }
+                stringp++;
+            }
+            if(*stringp == '\'') break;
+            if(*stringp == '\0') break;
+            stringp++;
+        }
         if(*stringp == '\'') *stringp++ = '\0';
         return arg;
     }
