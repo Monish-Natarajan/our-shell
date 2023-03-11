@@ -582,6 +582,21 @@ void executeSingleCommand(string command) {
         dup2(out, STDOUT_FILENO);
         close(out);
     }
+        if (fInRedirect != 0 && fOutRedirect != 0)
+    {
+        // Remove redirection arguments
+        args.erase(args.begin() + min(fInRedirect, fOutRedirect), args.begin() + max(fInRedirect, fOutRedirect));
+    }
+    else if (fInRedirect != 0)
+    {
+        // Remove redirection arguments
+        args.erase(args.begin() + fInRedirect);
+    }
+    else if (fOutRedirect != 0)
+    {
+        // Remove redirection arguments
+        args.erase(args.begin() + fOutRedirect);
+    }
 
     args.push_back(NULL);
     char **args_ptr = &args[0];
