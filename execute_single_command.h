@@ -100,72 +100,98 @@ char *nextArg(char *&stringp) {
     if (*stringp == '\0') return NULL;
     char *arg = stringp;
 
-    if (*arg == '"') {
+    if (*arg == '"')
+    {
         arg++;
         stringp++;
-        while (1) {    //*stringp != '"' && *stringp != '\0'){
-            if (*stringp == '\\') {
-                if (*(stringp + 1) == '"' || *(stringp + 1) == '\'' || *(stringp + 1) == '\\') {
+        while (1)
+        { //*stringp != '"' && *stringp != '\0'){
+            if (*stringp == '\\')
+            {
+                if (*(stringp + 1) == '"' || *(stringp + 1) == '\'' || *(stringp + 1) == '\\')
+                {
                     strcpy(stringp, stringp + 1);
                 }
                 stringp++;
             }
-            if (*stringp == '"') break;
-            if (*stringp == '\0') break;
+            if (*stringp == '"')
+                break;
+            if (*stringp == '\0')
+                break;
             stringp++;
         }
-        if (*stringp == '"') *stringp++ = '\0';
+        if (*stringp == '"')
+            *stringp++ = '\0';
         return arg;
     }
 
-    if (*arg == '\'') {
+    if (*arg == '\'')
+    {
         arg++;
         stringp++;
-        while (1) {    //*stringp != '"' && *stringp != '\0'){
-            if (*stringp == '\\') {
-                if (*(stringp + 1) == '\'' || *(stringp + 1) == '"' || *(stringp + 1) == '\\') {
+        while (1)
+        { //*stringp != '"' && *stringp != '\0'){
+            if (*stringp == '\\')
+            {
+                if (*(stringp + 1) == '\'' || *(stringp + 1) == '"' || *(stringp + 1) == '\\')
+                {
                     strcpy(stringp, stringp + 1);
                 }
                 stringp++;
             }
-            if (*stringp == '\'') break;
-            if (*stringp == '\0') break;
+            if (*stringp == '\'')
+                break;
+            if (*stringp == '\0')
+                break;
             stringp++;
         }
-        if (*stringp == '\'') *stringp++ = '\0';
+        if (*stringp == '\'')
+            *stringp++ = '\0';
         return arg;
     }
 
     while (*stringp != ' ' && *stringp != '\t' && *stringp != '\0')
         stringp++;
 
-    if (*stringp != '\0') *stringp++ = '\0';
+    if (*stringp != '\0')
+        *stringp++ = '\0';
     return arg;
 }
 
 // gets arguments from a single command
-void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect) {
-    while (1) {
+void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect)
+{
+    while (1)
+    {
         char *arg = nextArg(stringp);
         if (arg == NULL)
             break;
         if (strlen(arg) == 0)
             continue;
-        else if (strcmp(arg, "&") == 0) {
+        else if (strcmp(arg, "&") == 0)
+        {
             BACKGROUND_FLAG = 1;
-        } else {
+        }
+        else
+        {
             int i = 0, j = 0;
             // check for i/o redirection(s) in extracted tokens
-            while (arg[j] != '\0') {
-                if (arg[j] == '<') {
-                    if (i != j) {
+            while (arg[j] != '\0')
+            {
+                if (arg[j] == '<')
+                {
+                    if (i != j)
+                    {
                         arg[j] = '\0';
                         args.push_back(arg + i);
                     }
                     fInRedirect = args.size();
                     i = j + 1;
-                } else if (arg[j] == '>') {
-                    if (i != j) {
+                }
+                else if (arg[j] == '>')
+                {
+                    if (i != j)
+                    {
                         arg[j] = '\0';
                         args.push_back(arg + i);
                     }
@@ -174,7 +200,8 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
                 }
                 j++;
             }
-            if (i != j) {
+            if (i != j)
+            {
                 char *word = arg + i;
                 vector<char *> substitutes = substitute(word);
                 for (char *substitute : substitutes)
@@ -185,53 +212,68 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
 }
 
 // Function to execute pwd
-void executePwd() {
+void executePwd()
+{
     char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+    {
         printf("%s\n", cwd);
-    } else {
+    }
+    else
+    {
         perror("Error: Unable to get current working directory\n");
     }
 }
 
 // Function to get pids of processes having file open or holding lock over file
-void get_pids(string filepath, vector<pid_t> &pids) {
+void get_pids(string filepath, vector<pid_t> &pids)
+{
     string ex = "lsof -t " + filepath;
     FILE *fp = popen(ex.c_str(), "r");
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         perror("Error running lsof");
         return;
     }
     int p;
-    while (fscanf(fp, "%d", &p) == 1) {
+    while (fscanf(fp, "%d", &p) == 1)
+    {
         pids.push_back(p);
     }
     pclose(fp);
 }
 
 // Function to execute delep **delete with extreme prejudice**
-void execeuteDelep(vector<char *> &args) {
-    if (args.size() != 2) {
+void execeuteDelep(vector<char *> &args)
+{
+    if (args.size() != 2)
+    {
         perror("Syntax error: Usage: delep <<filepath>>\n");
         return;
     }
     vector<pid_t> pids;
     get_pids(args[1], pids);
     bool consent = 0;
-    if (pids.empty()) {
+    if (pids.empty())
+    {
         printf("No process found with open file: %s\n", args[1]);
         if (remove(args[1]) != 0)
             perror("Error deleting file\n");
         else
             printf("%s deleted succesfully!\n", args[1]);
-    } else {
+    }
+    else
+    {
         printf("The following processes have the file open or are holding a lock:\n");
-        for (auto &p : pids) printf("%d ", p);
+        for (auto &p : pids)
+            printf("%d ", p);
         char ans[MAX_INPUT];
         printf("\nDo you want to kill all these processes and delete file? (yes/no): ");
         scanf("%s", ans);
-        if (strcmp(ans, "yes") == 0) {
-            for (auto &p : pids) {
+        if (strcmp(ans, "yes") == 0)
+        {
+            for (auto &p : pids)
+            {
                 // Function to kill process with given pid
                 kill(p, SIGKILL);
             }
@@ -379,8 +421,10 @@ int execute_our_command(string command) {
     getArgs((char *)command.c_str(), args, fInRedirect, fOutRedirect);
 
     // handle exit from shell
-    if (strcmp(args[0], "exit") == 0) {
-        while (!hist.empty()) {
+    if (strcmp(args[0], "exit") == 0)
+    {
+        while (!hist.empty())
+        {
             fprintf(fptr, "%s\n", hist.front().c_str());
             hist.pop_front();
         }
@@ -389,41 +433,50 @@ int execute_our_command(string command) {
         exit(0);
     }
     // handle cd from shell
-    else if (strcmp(args[0], "cd") == 0) {
+    else if (strcmp(args[0], "cd") == 0)
+    {
         executeCD(args);
         return 1;
     }
     return 0;
 }
 
-void execute(string command) {
+void execute(string command)
+{
     int len = command.size();
-    while (--len >= 0) {
-        if (command[len] == '|') {
+    while (--len >= 0)
+    {
+        if (command[len] == '|')
+        {
             pid_t pid = fork();
-            if (pid == -1) {
+            if (pid == -1)
+            {
                 perror("fork");
                 exit(EXIT_FAILURE);
             }
 
-            if (pid == 0) {
+            if (pid == 0)
+            {
                 BACKGROUND_FLAG = 0;
 
                 int pipe_fds[2];
                 pid_t pid;
 
-                if (pipe(pipe_fds) == -1) {
+                if (pipe(pipe_fds) == -1)
+                {
                     perror("pipe");
                     exit(EXIT_FAILURE);
                 }
 
                 pid = fork();
-                if (pid == -1) {
+                if (pid == -1)
+                {
                     perror("fork");
                     exit(EXIT_FAILURE);
                 }
 
-                if (pid == 0) {
+                if (pid == 0)
+                {
                     BACKGROUND_FLAG = 0;
 
                     // 1st process
@@ -434,7 +487,8 @@ void execute(string command) {
                     exit(EXIT_SUCCESS);
                 }
 
-                else {
+                else
+                {
                     // 2nd process
 
                     close(pipe_fds[1]);
@@ -444,21 +498,28 @@ void execute(string command) {
                     executeSingleCommand(command.substr(len + 1));
                     exit(EXIT_SUCCESS);
                 }
-            } else {
+            }
+            else
+            {
                 // parent process
                 // close(pipe_fds[1]);
                 // close(pipe_fds[0]);
-                if (!BACKGROUND_FLAG) {
+                if (!BACKGROUND_FLAG)
+                {
                     current_waiting_process = pid;
-                    while (!BACKGROUND_FLAG) {
+                    while (!BACKGROUND_FLAG)
+                    {
                         int chek = waitpid(pid, NULL, WNOHANG);
-                        if (chek == pid) {
+                        if (chek == pid)
+                        {
                             break;
                         }
                     }
                     current_waiting_process = -1;
                     int status = execute_our_command(command.substr(len + 1));
-                } else {
+                }
+                else
+                {
                     background_processes.push_back(make_pair(pid, command));
                     printf("[%ld] %d\n", background_processes.size(), pid);
                     fflush(stdout);
@@ -475,25 +536,35 @@ void execute(string command) {
 
     // fork child to execute
     pid_t pid = fork();
-    if (pid == -1) {
+    if (pid == -1)
+    {
         cerr << "Failed To Fork!" << endl;
         return;
-    } else if (pid == 0) {
+    }
+    else if (pid == 0)
+    {
         BACKGROUND_FLAG = 0;
         executeSingleCommand(command);
         exit(EXIT_SUCCESS);
-    } else {
-        if (!BACKGROUND_FLAG) {
+    }
+    else
+    {
+        if (!BACKGROUND_FLAG)
+        {
             current_waiting_process = pid;
-            while (!BACKGROUND_FLAG) {
+            while (!BACKGROUND_FLAG)
+            {
                 int chek = waitpid(pid, NULL, WNOHANG);
-                if (chek == pid) {
+                if (chek == pid)
+                {
                     break;
                 }
             }
             current_waiting_process = -1;
             int status = execute_our_command(command.substr(len + 1));
-        } else {
+        }
+        else
+        {
             background_processes.push_back(make_pair(pid, command));
             printf("[%ld] %d\n", background_processes.size(), pid);
             fflush(stdout);
@@ -502,7 +573,8 @@ void execute(string command) {
     }
 }
 
-void parseCommand(string &command) {
+void parseCommand(string &command)
+{
     BACKGROUND_FLAG = 0;
 
     while (!command.empty() && (command.back() == ' ' || command.back() == '\t' || command.back() == '\n'))
@@ -513,11 +585,15 @@ void parseCommand(string &command) {
 
     // find first occurance of '&' in command
     size_t found = command.find('&');
-    if (found != string::npos) {
-        if (found != command.size() - 1) {
+    if (found != string::npos)
+    {
+        if (found != command.size() - 1)
+        {
             cerr << "Syntax error: tokens found after '&'" << endl;
             return;
-        } else {
+        }
+        else
+        {
             command.pop_back();
             BACKGROUND_FLAG = 1;
         }
