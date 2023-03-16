@@ -1,12 +1,12 @@
 /*
-Assignment-2 
+Assignment-2
 Group No- 1
 Members: Gaurav Malakar,    20CS10029
          Atishay Jain,      20CS30008
          Roopak Priydarshi, 20CS30042
          Monish Natarajan,  20CS30033
 
-Run with command:- 
+Run with command:-
 g++ Assignment2_1_20CS10029_20CS30008_20CS30042_20CS30033.cpp -o ourshell -lreadline ; ./ourshell
 */
 
@@ -27,7 +27,6 @@ g++ Assignment2_1_20CS10029_20CS30008_20CS30042_20CS30033.cpp -o ourshell -lread
 #include <algorithm>
 #include <limits>
 
-
 using namespace std;
 
 #define RESET "\x1B[0m"
@@ -42,14 +41,12 @@ char curr_working_dir[1024]; // Current working directory
 char prompt[1124];
 int BACKGROUND_FLAG;                              // Flag to check if the command is to be run in background
 vector<pair<pid_t, string>> background_processes; // Vector to store the PIDs of background processes
-pid_t  current_waiting_process=-1; // PID of the process that is currently being waited for
-
+pid_t current_waiting_process = -1;               // PID of the process that is currently being waited for
 
 deque<string> hist;
 string command;
 char *input;
 FILE *fptr;
-
 
 bool match(char *pattern, char *str)
 {
@@ -141,14 +138,12 @@ vector<char *> substitute(char *pattern)
     return filenames;
 }
 
-
-
-
-const char *printPrompt();            // Function to print the prompt
-void check_background_processes();    // Function to check if any background process has finished
+const char *printPrompt();         // Function to print the prompt
+void check_background_processes(); // Function to check if any background process has finished
 
 // Function to handle the SIGINT signal (Ctrl+C) and print the prompt after that
-void sig_handler_prompt(int signum) {
+void sig_handler_prompt(int signum)
+{
     string tmpc = rl_line_buffer;
     rl_replace_line("", 0);
     rl_redisplay();
@@ -158,17 +153,22 @@ void sig_handler_prompt(int signum) {
 }
 
 // Function to handle the SIGINT signal (Ctrl+C) and not print the prompt after that
-void sig_handler_no_prompt(int signum) {
+void sig_handler_no_prompt(int signum)
+{
     printf("\n");
 }
 
-void sig_handler_ctrl_Z(int signum) {
-    if (current_waiting_process != -1) {
+void sig_handler_ctrl_Z(int signum)
+{
+    if (current_waiting_process != -1)
+    {
         BACKGROUND_FLAG = 1;
         background_processes.push_back(make_pair(current_waiting_process, command));
         printf("\n[%ld] %d\n", background_processes.size(), current_waiting_process);
         fflush(stdout);
-    } else {
+    }
+    else
+    {
         string tmpc = rl_line_buffer;
         rl_replace_line("", 0);
         rl_redisplay();
@@ -176,16 +176,13 @@ void sig_handler_ctrl_Z(int signum) {
         printf("%s%s^Z", printPrompt(), tmpc.c_str());
         printf("\n%s", printPrompt());
     }
-    for (auto &pr : background_processes) {
+    for (auto &pr : background_processes)
+    {
         if (pr.first == -1)
-            continue;    // process already finished (waitpid() was called
+            continue; // process already finished (waitpid() was called
         kill(pr.first, SIGCONT);
     }
 }
-
-
-
-
 
 int cm, sz;
 
@@ -234,16 +231,13 @@ string getcmd()
     return command;
 }
 
-
-
-
-
-
-int get_cpu_util(pid_t pid) {
+int get_cpu_util(pid_t pid)
+{
     string line;
     string path = "/proc/" + to_string(pid) + "/stat";
     ifstream stat_stream(path);
-    if (!stat_stream.is_open()) {
+    if (!stat_stream.is_open())
+    {
         cerr << "Error: failed to open file '" << path << "'" << endl;
     }
     getline(stat_stream, line);
@@ -252,27 +246,31 @@ int get_cpu_util(pid_t pid) {
     // The CPU utilization is stored as the 14th and 15th values in the line.
     // The memory utilization is stored as the 22nd value in the line.
     long long utime, stime, start_time, uptime;
-    for (int i = 0; i < 23; ++i) {
+    for (int i = 0; i < 23; ++i)
+    {
         if (i == 13)
             line_stream >> utime;
         else if (i == 14)
             line_stream >> stime;
-        else if (i == 22) {
+        else if (i == 22)
+        {
             line_stream >> start_time;
             // cout << "reading start time " << start_time << "\n";
-        } else
+        }
+        else
             line_stream.ignore(numeric_limits<streamsize>::max(), ' ');
     }
 
     string path2 = "/proc/uptime";
     ifstream stat_stream2(path2);
-    if (!stat_stream2.is_open()) {
+    if (!stat_stream2.is_open())
+    {
         cerr << "Error: failed to open file '" << path2 << "'" << endl;
     }
     getline(stat_stream2, line);
     istringstream line_stream2(line);
     line_stream2 >> uptime;
-    uptime *= 100;    // converting to clock ticks
+    uptime *= 100; // converting to clock ticks
     double cpu_util = (stime + utime) * 100.0 / (uptime - start_time);
 
     // Print the results.
@@ -283,13 +281,16 @@ int get_cpu_util(pid_t pid) {
     return cpu_util;
 }
 
-vector<string> list_dir(string path) {
+vector<string> list_dir(string path)
+{
     vector<string> list_dirs;
     DIR *d;
     struct dirent *dir;
     d = opendir(path.c_str());
-    if (d) {
-        while ((dir = readdir(d)) != NULL) {
+    if (d)
+    {
+        while ((dir = readdir(d)) != NULL)
+        {
             list_dirs.push_back(dir->d_name);
         }
         closedir(d);
@@ -297,19 +298,23 @@ vector<string> list_dir(string path) {
     return list_dirs;
 }
 
-int get_heur(pid_t pid) {
+int get_heur(pid_t pid)
+{
     int heur = 0, child_util;
     vector<string> list_dirs;
     string path = "/proc/" + to_string(pid) + "/task";
     list_dirs = list_dir(path);
 
-    for (int i = 0; i < list_dirs.size(); i++) {
-        if (i == 0 || i == 1) continue;
+    for (int i = 0; i < list_dirs.size(); i++)
+    {
+        if (i == 0 || i == 1)
+            continue;
         string tid = list_dirs[i];
         // cout << tid << " ";
         path = "/proc/" + to_string(pid) + "/task/" + tid + "/children";
         ifstream stat_stream(path);
-        if (!stat_stream.is_open()) {
+        if (!stat_stream.is_open())
+        {
             cerr << "Error: failed to open file '" << path << "'" << endl;
             return 2;
         }
@@ -318,9 +323,11 @@ int get_heur(pid_t pid) {
         istringstream line_stream(line);
         pid_t cpid;
 
-        while (!line_stream.eof()) {
+        while (!line_stream.eof())
+        {
             line_stream >> cpid;
-            if (cpid <= 0) continue;
+            if (cpid <= 0)
+                continue;
             child_util = get_cpu_util(cpid);
             cout << "child " << cpid << " utilization " << child_util << "%\n";
             heur += child_util;
@@ -329,77 +336,106 @@ int get_heur(pid_t pid) {
     return heur;
 }
 
-char *nextArg(char *&stringp) {
-    while (*stringp == ' ' || *stringp == '\t') stringp++;
-    if (*stringp == '\0') return NULL;
+char *nextArg(char *&stringp)
+{
+    while (*stringp == ' ' || *stringp == '\t')
+        stringp++;
+    if (*stringp == '\0')
+        return NULL;
     char *arg = stringp;
 
-    if (*arg == '"') {
+    if (*arg == '"')
+    {
         arg++;
         stringp++;
-        while (1) {    //*stringp != '"' && *stringp != '\0'){
-            if (*stringp == '\\') {
-                if (*(stringp + 1) == '"' || *(stringp + 1) == '\'' || *(stringp + 1) == '\\') {
+        while (1)
+        { //*stringp != '"' && *stringp != '\0'){
+            if (*stringp == '\\')
+            {
+                if (*(stringp + 1) == '"' || *(stringp + 1) == '\'' || *(stringp + 1) == '\\')
+                {
                     strcpy(stringp, stringp + 1);
                 }
                 stringp++;
             }
-            if (*stringp == '"') break;
-            if (*stringp == '\0') break;
+            if (*stringp == '"')
+                break;
+            if (*stringp == '\0')
+                break;
             stringp++;
         }
-        if (*stringp == '"') *stringp++ = '\0';
+        if (*stringp == '"')
+            *stringp++ = '\0';
         return arg;
     }
 
-    if (*arg == '\'') {
+    if (*arg == '\'')
+    {
         arg++;
         stringp++;
-        while (1) {    //*stringp != '"' && *stringp != '\0'){
-            if (*stringp == '\\') {
-                if (*(stringp + 1) == '\'' || *(stringp + 1) == '"' || *(stringp + 1) == '\\') {
+        while (1)
+        { //*stringp != '"' && *stringp != '\0'){
+            if (*stringp == '\\')
+            {
+                if (*(stringp + 1) == '\'' || *(stringp + 1) == '"' || *(stringp + 1) == '\\')
+                {
                     strcpy(stringp, stringp + 1);
                 }
                 stringp++;
             }
-            if (*stringp == '\'') break;
-            if (*stringp == '\0') break;
+            if (*stringp == '\'')
+                break;
+            if (*stringp == '\0')
+                break;
             stringp++;
         }
-        if (*stringp == '\'') *stringp++ = '\0';
+        if (*stringp == '\'')
+            *stringp++ = '\0';
         return arg;
     }
 
     while (*stringp != ' ' && *stringp != '\t' && *stringp != '\0')
         stringp++;
 
-    if (*stringp != '\0') *stringp++ = '\0';
+    if (*stringp != '\0')
+        *stringp++ = '\0';
     return arg;
 }
 
 // gets arguments from a single command
-void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect) {
-    while (1) {
+void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRedirect)
+{
+    while (1)
+    {
         char *arg = nextArg(stringp);
         if (arg == NULL)
             break;
         if (strlen(arg) == 0)
             continue;
-        else if (strcmp(arg, "&") == 0) {
+        else if (strcmp(arg, "&") == 0)
+        {
             BACKGROUND_FLAG = 1;
-        } else {
+        }
+        else
+        {
             int i = 0, j = 0;
             // check for i/o redirection(s) in extracted tokens
-            while (arg[j] != '\0') {
-                if (arg[j] == '<') {
-                    if (i != j) {
+            while (arg[j] != '\0')
+            {
+                if (arg[j] == '<')
+                {
+                    if (i != j)
+                    {
                         arg[j] = '\0';
                         args.push_back(arg + i);
                     }
                     fInRedirect = args.size();
                     i = j + 1;
-                } else if (arg[j] == '>') {
-                    if (i != j) {
+                }
+                else if (arg[j] == '>')
+                {
+                    if (i != j)
+                    {
                         arg[j] = '\0';
                         args.push_back(arg + i);
                     }
@@ -408,7 +444,8 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
                 }
                 j++;
             }
-            if (i != j) {
+            if (i != j)
+            {
                 char *word = arg + i;
                 vector<char *> substitutes = substitute(word);
                 for (char *substitute : substitutes)
@@ -419,53 +456,68 @@ void getArgs(char *stringp, vector<char *> &args, int &fInRedirect, int &fOutRed
 }
 
 // Function to execute pwd
-void executePwd() {
+void executePwd()
+{
     char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+    {
         printf("%s\n", cwd);
-    } else {
+    }
+    else
+    {
         perror("Error: Unable to get current working directory\n");
     }
 }
 
 // Function to get pids of processes having file open or holding lock over file
-void get_pids(string filepath, vector<pid_t> &pids) {
+void get_pids(string filepath, vector<pid_t> &pids)
+{
     string ex = "lsof -t " + filepath;
     FILE *fp = popen(ex.c_str(), "r");
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         perror("Error running lsof");
         return;
     }
     int p;
-    while (fscanf(fp, "%d", &p) == 1) {
+    while (fscanf(fp, "%d", &p) == 1)
+    {
         pids.push_back(p);
     }
     pclose(fp);
 }
 
 // Function to execute delep **delete with extreme prejudice**
-void execeuteDelep(vector<char *> &args) {
-    if (args.size() != 2) {
+void execeuteDelep(vector<char *> &args)
+{
+    if (args.size() != 2)
+    {
         perror("Syntax error: Usage: delep <<filepath>>\n");
         return;
     }
     vector<pid_t> pids;
     get_pids(args[1], pids);
     bool consent = 0;
-    if (pids.empty()) {
+    if (pids.empty())
+    {
         printf("No process found with open file: %s\n", args[1]);
         if (remove(args[1]) != 0)
             perror("Error deleting file\n");
         else
             printf("%s deleted succesfully!\n", args[1]);
-    } else {
+    }
+    else
+    {
         printf("The following processes have the file open or are holding a lock:\n");
-        for (auto &p : pids) printf("%d ", p);
+        for (auto &p : pids)
+            printf("%d ", p);
         char ans[MAX_INPUT];
         printf("\nDo you want to kill all these processes and delete file? (yes/no): ");
         scanf("%s", ans);
-        if (strcmp(ans, "yes") == 0) {
-            for (auto &p : pids) {
+        if (strcmp(ans, "yes") == 0)
+        {
+            for (auto &p : pids)
+            {
                 // Function to kill process with given pid
                 kill(p, SIGKILL);
             }
@@ -478,8 +530,10 @@ void execeuteDelep(vector<char *> &args) {
 }
 
 // Function to execute sb **squash bug**
-void executeSb(vector<char *> &args) {
-    if (args.size() < 2 || args.size() > 3) {
+void executeSb(vector<char *> &args)
+{
+    if (args.size() < 2 || args.size() > 3)
+    {
         perror("Syntax error: Usage: sb <<pid>> [--suggest]\n");
         return;
     }
@@ -491,11 +545,13 @@ void executeSb(vector<char *> &args) {
     pid_t ppid, ptid, mlw_pid = -1;
     // ppid -> id of parent process, ptid -> id of controlling terminal
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++)
+    {
         // open /proc/[pid]/stat
         path = "/proc/" + to_string(pid) + "/stat";
         ifstream stat_stream(path);
-        if (!stat_stream.is_open()) {
+        if (!stat_stream.is_open())
+        {
             cerr << "Error: failed to open file '" << path << "'" << endl;
             return;
         }
@@ -504,9 +560,12 @@ void executeSb(vector<char *> &args) {
         getline(stat_stream, line);
         istringstream line_stream(line);
 
-        for (int i = 0; i < 7; ++i) {
-            if (i == 2) line_stream >> status;
-            if (i == 3) line_stream >> ppid;
+        for (int i = 0; i < 7; ++i)
+        {
+            if (i == 2)
+                line_stream >> status;
+            if (i == 3)
+                line_stream >> ppid;
             if (i == 6)
                 line_stream >> ptid;
             else
@@ -514,10 +573,11 @@ void executeSb(vector<char *> &args) {
         }
         cout << "gen  " << i << " pid: " << pid << " status : " << status << endl;
 
-        if (suggest == 1) {
+        if (suggest == 1)
+        {
             int heur = get_heur(pid);
             cout << "heuristic " << heur << " status " << status << "\n";
-            if (heur > ALERT_LIMIT && status == "S")    // can replace with diff checker_fn()
+            if (heur > ALERT_LIMIT && status == "S") // can replace with diff checker_fn()
             {
                 mlw_pid = pid;
                 break;
@@ -525,7 +585,8 @@ void executeSb(vector<char *> &args) {
         }
         pid = ppid;
     }
-    if (suggest == 1) {
+    if (suggest == 1)
+    {
         if (mlw_pid > 0)
             cout << "Detected Malware PID : " << mlw_pid << "\n";
         else
@@ -534,7 +595,8 @@ void executeSb(vector<char *> &args) {
 }
 
 // Function to execute a single commands
-void executeSingleCommand(string command) {
+void executeSingleCommand(string command)
+{
     vector<char *> args;
     int fInRedirect = 0, fOutRedirect = 0;
     getArgs((char *)command.c_str(), args, fInRedirect, fOutRedirect);
@@ -545,25 +607,30 @@ void executeSingleCommand(string command) {
         // Called from child(in case of pipe), so not useful
         exit(EXIT_SUCCESS);
     // handle pwd from shell
-    else if (strcmp(args[0], "pwd") == 0) {
+    else if (strcmp(args[0], "pwd") == 0)
+    {
         executePwd();
         exit(EXIT_SUCCESS);
     }
     // handle delep from shell
-    else if (strcmp(args[0], "delep") == 0) {
+    else if (strcmp(args[0], "delep") == 0)
+    {
         execeuteDelep(args);
         exit(EXIT_SUCCESS);
     }
     // handle sb (squash bug) from shell
-    else if (strcmp(args[0], "sb") == 0) {
+    else if (strcmp(args[0], "sb") == 0)
+    {
         executeSb(args);
         exit(EXIT_SUCCESS);
     }
 
-    if (fInRedirect != 0) {
+    if (fInRedirect != 0)
+    {
         // open input file
         int in = open(args[fInRedirect], O_RDONLY);
-        if (in == -1) {
+        if (in == -1)
+        {
             cerr << "Error opening file: " << args[fInRedirect] << endl;
             exit(1);
         }
@@ -571,10 +638,12 @@ void executeSingleCommand(string command) {
         dup2(in, STDIN_FILENO);
         close(in);
     }
-    if (fOutRedirect != 0) {
+    if (fOutRedirect != 0)
+    {
         // open output file
         int out = open(args[fOutRedirect], O_WRONLY | O_TRUNC | O_CREAT, 0644);
-        if (out == -1) {
+        if (out == -1)
+        {
             cerr << "Error opening file: " << args[fInRedirect] << endl;
             exit(1);
         }
@@ -582,7 +651,7 @@ void executeSingleCommand(string command) {
         dup2(out, STDOUT_FILENO);
         close(out);
     }
-        if (fInRedirect != 0 && fOutRedirect != 0)
+    if (fInRedirect != 0 && fOutRedirect != 0)
     {
         // Remove redirection arguments
         args.erase(args.begin() + min(fInRedirect, fOutRedirect), args.begin() + max(fInRedirect, fOutRedirect));
@@ -601,35 +670,44 @@ void executeSingleCommand(string command) {
     args.push_back(NULL);
     char **args_ptr = &args[0];
     // Execute arguments
-    if (execvp(args[0], args_ptr) < 0) {
+    if (execvp(args[0], args_ptr) < 0)
+    {
         cerr << "Error in executing command" << endl;
     }
 }
 
 // Function to change directory
-void executeCD(vector<char *> &args) {
-    if (args.size() < 2) {
+void executeCD(vector<char *> &args)
+{
+    if (args.size() < 2)
+    {
         cerr << "Error: cd: missing argument. Usage: cd <directory>" << endl;
         return;
-    } else if (args.size() > 2) {
+    }
+    else if (args.size() > 2)
+    {
         cerr << "Error: cd: too many arguments. Usage: cd <directory>" << endl;
         return;
     }
 
-    if (chdir(args[1]) != 0) {
+    if (chdir(args[1]) != 0)
+    {
         cerr << "Error: unable to change directory to \"" << args[1] << "\"" << endl;
         return;
     }
 }
 
-int execute_our_command(string command) {
+int execute_our_command(string command)
+{
     vector<char *> args;
     int fInRedirect = 0, fOutRedirect = 0;
     getArgs((char *)command.c_str(), args, fInRedirect, fOutRedirect);
 
     // handle exit from shell
-    if (strcmp(args[0], "exit") == 0) {
-        while (!hist.empty()) {
+    if (strcmp(args[0], "exit") == 0)
+    {
+        while (!hist.empty())
+        {
             fprintf(fptr, "%s\n", hist.front().c_str());
             hist.pop_front();
         }
@@ -638,41 +716,50 @@ int execute_our_command(string command) {
         exit(0);
     }
     // handle cd from shell
-    else if (strcmp(args[0], "cd") == 0) {
+    else if (strcmp(args[0], "cd") == 0)
+    {
         executeCD(args);
         return 1;
     }
     return 0;
 }
 
-void execute(string command) {
+void execute(string command)
+{
     int len = command.size();
-    while (--len >= 0) {
-        if (command[len] == '|') {
+    while (--len >= 0)
+    {
+        if (command[len] == '|')
+        {
             pid_t pid = fork();
-            if (pid == -1) {
+            if (pid == -1)
+            {
                 perror("fork");
                 exit(EXIT_FAILURE);
             }
 
-            if (pid == 0) {
+            if (pid == 0)
+            {
                 BACKGROUND_FLAG = 0;
 
                 int pipe_fds[2];
                 pid_t pid;
 
-                if (pipe(pipe_fds) == -1) {
+                if (pipe(pipe_fds) == -1)
+                {
                     perror("pipe");
                     exit(EXIT_FAILURE);
                 }
 
                 pid = fork();
-                if (pid == -1) {
+                if (pid == -1)
+                {
                     perror("fork");
                     exit(EXIT_FAILURE);
                 }
 
-                if (pid == 0) {
+                if (pid == 0)
+                {
                     BACKGROUND_FLAG = 0;
 
                     // 1st process
@@ -683,7 +770,8 @@ void execute(string command) {
                     exit(EXIT_SUCCESS);
                 }
 
-                else {
+                else
+                {
                     // 2nd process
 
                     close(pipe_fds[1]);
@@ -693,21 +781,28 @@ void execute(string command) {
                     executeSingleCommand(command.substr(len + 1));
                     exit(EXIT_SUCCESS);
                 }
-            } else {
+            }
+            else
+            {
                 // parent process
                 // close(pipe_fds[1]);
                 // close(pipe_fds[0]);
-                if (!BACKGROUND_FLAG) {
+                if (!BACKGROUND_FLAG)
+                {
                     current_waiting_process = pid;
-                    while (!BACKGROUND_FLAG) {
+                    while (!BACKGROUND_FLAG)
+                    {
                         int chek = waitpid(pid, NULL, WNOHANG);
-                        if (chek == pid) {
+                        if (chek == pid)
+                        {
                             break;
                         }
                     }
                     current_waiting_process = -1;
                     int status = execute_our_command(command.substr(len + 1));
-                } else {
+                }
+                else
+                {
                     background_processes.push_back(make_pair(pid, command));
                     printf("[%ld] %d\n", background_processes.size(), pid);
                     fflush(stdout);
@@ -724,25 +819,35 @@ void execute(string command) {
 
     // fork child to execute
     pid_t pid = fork();
-    if (pid == -1) {
+    if (pid == -1)
+    {
         cerr << "Failed To Fork!" << endl;
         return;
-    } else if (pid == 0) {
+    }
+    else if (pid == 0)
+    {
         BACKGROUND_FLAG = 0;
         executeSingleCommand(command);
         exit(EXIT_SUCCESS);
-    } else {
-        if (!BACKGROUND_FLAG) {
+    }
+    else
+    {
+        if (!BACKGROUND_FLAG)
+        {
             current_waiting_process = pid;
-            while (!BACKGROUND_FLAG) {
+            while (!BACKGROUND_FLAG)
+            {
                 int chek = waitpid(pid, NULL, WNOHANG);
-                if (chek == pid) {
+                if (chek == pid)
+                {
                     break;
                 }
             }
             current_waiting_process = -1;
             int status = execute_our_command(command.substr(len + 1));
-        } else {
+        }
+        else
+        {
             background_processes.push_back(make_pair(pid, command));
             printf("[%ld] %d\n", background_processes.size(), pid);
             fflush(stdout);
@@ -751,7 +856,8 @@ void execute(string command) {
     }
 }
 
-void parseCommand(string &command) {
+void parseCommand(string &command)
+{
     BACKGROUND_FLAG = 0;
 
     while (!command.empty() && (command.back() == ' ' || command.back() == '\t' || command.back() == '\n'))
@@ -762,11 +868,15 @@ void parseCommand(string &command) {
 
     // find first occurance of '&' in command
     size_t found = command.find('&');
-    if (found != string::npos) {
-        if (found != command.size() - 1) {
+    if (found != string::npos)
+    {
+        if (found != command.size() - 1)
+        {
             cerr << "Syntax error: tokens found after '&'" << endl;
             return;
-        } else {
+        }
+        else
+        {
             command.pop_back();
             BACKGROUND_FLAG = 1;
         }
@@ -774,18 +884,20 @@ void parseCommand(string &command) {
     execute(command);
 }
 
+int main()
+{
+    signal(SIGTSTP, sig_handler_ctrl_Z); // Ctrl+Z
 
-int main() {
-    signal(SIGTSTP, sig_handler_ctrl_Z);    // Ctrl+Z
-
-    fptr = fopen(".history", "a");    // used a option to create a file if doesn't exist
+    fptr = fopen(".history", "a"); // used a option to create a file if doesn't exist
     fclose(fptr);
-    fptr = fopen(".history", "r+");    // used r+ option to open file for r/w
-    if (!fptr) {
+    fptr = fopen(".history", "r+"); // used r+ option to open file for r/w
+    if (!fptr)
+    {
         printf("history couldn't be accesed\n");
     }
     char str[MAXCMDLEN];
-    while (fgets(str, MAXCMDLEN, fptr)) {
+    while (fgets(str, MAXCMDLEN, fptr))
+    {
         int len = strlen(str);
         if (str[len - 1] == '\n')
             str[len - 1] = '\0';
@@ -793,7 +905,8 @@ int main() {
     }
     fseek(fptr, 0, SEEK_SET);
     bool f = 0;
-    while (true) {
+    while (true)
+    {
         vector ar = background_processes;
         printPrompt();
         signal(SIGINT, sig_handler_prompt);
@@ -807,7 +920,8 @@ int main() {
 }
 
 // Function to print the prompt
-const char *printPrompt() {
+const char *printPrompt()
+{
     check_background_processes();
     getcwd(curr_working_dir, sizeof(curr_working_dir));
     sprintf(prompt, "SHELL++:%s$ ", curr_working_dir);
@@ -817,13 +931,16 @@ const char *printPrompt() {
 }
 
 // Function to check if any background process has finished
-void check_background_processes() {
-    for (int i = 0; i < background_processes.size(); i++) {
+void check_background_processes()
+{
+    for (int i = 0; i < background_processes.size(); i++)
+    {
         if (background_processes[i].first == -1)
-            continue;    // process already finished (waitpid() was called
+            continue; // process already finished (waitpid() was called
         int status;
         pid_t pid = waitpid(background_processes[i].first, &status, WNOHANG);
-        if (pid > 0) {
+        if (pid > 0)
+        {
             printf("[%d] Done\t\t", i + 1);
             printf("%s\n", background_processes[i].second.c_str());
             fflush(stdout);
@@ -833,7 +950,3 @@ void check_background_processes() {
     while (background_processes.size() && background_processes.back().first == -1)
         background_processes.pop_back();
 }
-
-
-
-
