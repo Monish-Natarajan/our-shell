@@ -9,6 +9,7 @@ Members: Gaurav Malakar,    20CS10029
 Run with command:-
 g++ Assignment2_1_20CS10029_20CS30008_20CS30042_20CS30033.cpp -o ourshell -lreadline ; ./ourshell
 */
+#include <cstdio>
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -924,7 +925,7 @@ const char *printPrompt()
 {
     check_background_processes();
     getcwd(curr_working_dir, sizeof(curr_working_dir));
-    sprintf(prompt, "SHELL++:%s$ ", curr_working_dir);
+    sprintf(prompt, "our-shell@garm:%s$ ", curr_working_dir);
     // sprintf(prompt, "%s%sSHELL++:%s%s$ %s", BOLD, GREEN, BLUE, curr_working_dir, RESET);
     fflush(stdout);
     return prompt;
