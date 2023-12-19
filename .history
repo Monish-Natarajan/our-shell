@@ -108,3 +108,19 @@ clear
 exit
 rm hel.txt 
 exit
+cd 
+cd /
+ls
+cd home
+ls
+cd gm
+ls
+cd Programming/
+ls
+cd Projects/
+ls
+exit
+ls
+exit
+rm shell
+exit
